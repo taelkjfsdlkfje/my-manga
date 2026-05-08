@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>My Manga</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0e0e0f;
+    --surface: #1a1a1b;
+    --border: #2a2a2c;
+    --accent: #e8c547;
+    --text: #f0ede8;
+    --muted: #888;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HOME SCREEN */
+  #home {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .home-header {
+    padding: 48px 24px 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .home-header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 12vw, 80px);
+    letter-spacing: 2px;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .home-header h1 span {
+    color: var(--accent);
+  }
+
+  .home-header p {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+  }
+
+  .chapter-list {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+  }
+
+  .chapter-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .chapter-card:active {
+    background: #222224;
+    border-color: var(--accent);
+  }
+
+  .chapter-card-left { display: flex; flex-direction: column; gap: 4px; }
+
+  .chapter-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 1px;
+    line-height: 1;
+    color: var(--accent);
+  }
+
+  .chapter-title {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text);
+  }
+
+  .chapter-pages {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  .chapter-arrow {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .chapter-arrow svg {
+    width: 14px;
+    height: 14px;
+    stroke: var(--muted);
+  }
+
+  /* READER SCREEN */
+  #reader {
+    display: none;
+    min-height: 100vh;
+    flex-direction: column;
+  }
+
+  #reader.active {
+    display: flex;
+  }
+
+  .reader-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: linear-gradient(to bottom, rgba(14,14,15,0.98), transparent);
+    padding: 12px 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transform: translateY(0);
+    transition: transform 0.25s ease;
+  }
+
+  .reader-bar.hidden {
+    transform: translateY(-100%);
+  }
+
+  .back-btn {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .back-btn svg { width: 16px; height: 16px; stroke: var(--text); }
+
+  .reader-info { flex: 1; min-width: 0; }
+
+  .reader-chapter {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: var(--accent);
+  }
+
+  .reader-progress {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  .reader-pages {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding-top: 0;
+  }
+
+  .page-img {
+    width: 100%;
+    display: block;
+    background: #111;
+  }
+
+  .page-img.loading {
+    min-height: 60vw;
+    background: var(--surface);
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* bottom bar */
+  .reader-bottom {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 100;
+    background: linear-gradient(to top, rgba(14,14,15,0.98), transparent);
+    padding: 24px 16px 16px;
+    transform: translateY(0);
+    transition: transform 0.25s ease;
+  }
+
+  .reader-bottom.hidden {
+    transform: translateY(100%);
+  }
+
+  .progress-track {
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.2s ease;
+  }
+
+  .nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .nav-btn {
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--surface);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .nav-btn:active { border-color: var(--accent); }
+  .nav-btn:disabled { opacity: 0.3; pointer-events: none; }
+
+  .page-counter {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+
+  .page-counter span { color: var(--text); }
+
+  /* tap zones */
+  .tap-zones {
+    position: fixed;
+    top: 60px; bottom: 60px; left: 0; right: 0;
+    display: flex;
+    z-index: 50;
+    pointer-events: none;
+  }
+
+  .tap-zones.active { pointer-events: all; }
+
+  .tap-left, .tap-right {
+    flex: 1;
+    cursor: pointer;
+  }
+
+  .tap-center {
+    width: 80px;
+    flex-shrink: 0;
+  }
+
+  /* end of chapter */
+  .end-card {
+    margin: 40px 24px;
+    padding: 32px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    text-align: center;
+    background: var(--surface);
+  }
+
+  .end-card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .end-card p {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+
+  .end-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  .end-btn {
+    padding: 12px 24px;
+    border-radius: 3px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color 0.15s;
+  }
+
+  .end-btn.primary {
+    background: var(--accent);
+    color: #0e0e0f;
+    border-color: var(--accent);
+    font-weight: 500;
+  }
+
+  .end-btn:active { opacity: 0.8; }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="home">
+  <div class="home-header">
+    <h1>MY<br><span>MANGA</span></h1>
+    <p>Select a chapter to begin reading</p>
+  </div>
+  <div class="chapter-list" id="chapterList"></div>
+</div>
+
+<!-- READER -->
+<div id="reader">
+  <div class="reader-bar" id="readerBar">
+    <button class="back-btn" onclick="goHome()">
+      <svg fill="none" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="reader-info">
+      <div class="reader-chapter" id="readerChapterLabel"></div>
+      <div class="reader-progress" id="readerProgressLabel"></div>
+    </div>
+  </div>
+
+  <div class="tap-zones active" id="tapZones">
+    <div class="tap-left" onclick="prevPage()"></div>
+    <div class="tap-center" onclick="toggleBars()"></div>
+    <div class="tap-right" onclick="nextPage()"></div>
+  </div>
+
+  <div class="reader-pages" id="readerPages"></div>
+
+  <div class="reader-bottom" id="readerBottom">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="nav-row">
+      <button class="nav-btn" id="prevBtn" onclick="prevPage()">← Prev</button>
+      <div class="page-counter"><span id="pageNum">1</span> / <span id="pageTotal">1</span></div>
+      <button class="nav-btn" id="nextBtn" onclick="nextPage()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BASE = 'https://raw.githubusercontent.com/taelkjfsdlkfje/my-manga/main/';
+
+const CHAPTERS = [
+  { title: 'Chapter 1', dir: 'chapter1/', pages: 66 },
+  { title: 'Chapter 2', dir: 'chapter2/', pages: 73 },
+  { title: 'Chapter 3', dir: 'chapter3/', pages: 64 },
+];
+
+let currentChapter = 0;
+let currentPage = 0;
+let barsVisible = true;
+let allImages = [];
+
+// Build home
+const list = document.getElementById('chapterList');
+CHAPTERS.forEach((ch, i) => {
+  const card = document.createElement('div');
+  card.className = 'chapter-card';
+  card.innerHTML = `
+    <div class="chapter-card-left">
+      <div class="chapter-num">CH.${String(i+1).padStart(2,'0')}</div>
+      <div class="chapter-title">${ch.title}</div>
+      <div class="chapter-pages">${ch.pages} pages</div>
+    </div>
+    <div class="chapter-arrow">
+      <svg fill="none" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>`;
+  card.onclick = () => openChapter(i);
+  list.appendChild(card);
+});
+
+function openChapter(idx) {
+  currentChapter = idx;
+  currentPage = 0;
+  const ch = CHAPTERS[idx];
+
+  document.getElementById('home').style.display = 'none';
+  document.getElementById('reader').classList.add('active');
+  document.getElementById('readerChapterLabel').textContent = ch.title;
+
+  // Build images
+  const container = document.getElementById('readerPages');
+  container.innerHTML = '';
+  allImages = [];
+
+  for (let p = 0; p < ch.pages; p++) {
+    const img = document.createElement('img');
+    img.className = 'page-img loading';
+    img.src = BASE + ch.dir + p + '.png';
+    img.onload = () => img.classList.remove('loading');
+    img.onerror = () => img.classList.remove('loading');
+    container.appendChild(img);
+    allImages.push(img);
+  }
+
+  // End card
+  const end = document.createElement('div');
+  end.className = 'end-card';
+  const nextIdx = idx + 1;
+  const hasNext = nextIdx < CHAPTERS.length;
+  end.innerHTML = `
+    <h3>End of ${ch.title}</h3>
+    <p>${hasNext ? 'Ready for the next chapter?' : 'You\'ve caught up!'}</p>
+    <div class="end-btns">
+      <button class="end-btn" onclick="goHome()">← Chapters</button>
+      ${hasNext ? `<button class="end-btn primary" onclick="openChapter(${nextIdx})">Next Chapter →</button>` : ''}
+    </div>`;
+  container.appendChild(end);
+
+  updateUI();
+  window.scrollTo(0, 0);
+}
+
+function goHome() {
+  document.getElementById('reader').classList.remove('active');
+  document.getElementById('home').style.display = 'flex';
+  window.scrollTo(0, 0);
+}
+
+function scrollToPage(idx) {
+  if (idx < 0 || idx >= allImages.length) return;
+  currentPage = idx;
+  allImages[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+  updateUI();
+}
+
+function nextPage() {
+  if (currentPage < allImages.length - 1) scrollToPage(currentPage + 1);
+}
+
+function prevPage() {
+  if (currentPage > 0) scrollToPage(currentPage - 1);
+}
+
+function toggleBars() {
+  barsVisible = !barsVisible;
+  document.getElementById('readerBar').classList.toggle('hidden', !barsVisible);
+  document.getElementById('readerBottom').classList.toggle('hidden', !barsVisible);
+}
+
+function updateUI() {
+  const total = CHAPTERS[currentChapter].pages;
+  const p = currentPage + 1;
+  document.getElementById('pageNum').textContent = p;
+  document.getElementById('pageTotal').textContent = total;
+  document.getElementById('readerProgressLabel').textContent = `Page ${p} of ${total}`;
+  document.getElementById('progressFill').style.width = ((p / total) * 100) + '%';
+  document.getElementById('prevBtn').disabled = currentPage === 0;
+  document.getElementById('nextBtn').disabled = currentPage >= total - 1;
+}
+
+// Track scroll position to update current page
+const reader = document.getElementById('reader');
+let scrollTimer;
+window.addEventListener('scroll', () => {
+  clearTimeout(scrollTimer);
+  scrollTimer = setTimeout(() => {
+    if (!document.getElementById('reader').classList.contains('active')) return;
+    let closest = 0;
+    let closestDist = Infinity;
+    allImages.forEach((img, i) => {
+      const rect = img.getBoundingClientRect();
+      const dist = Math.abs(rect.top);
+      if (dist < closestDist) { closestDist = dist; closest = i; }
+    });
+    if (closest !== currentPage) {
+      currentPage = closest;
+      updateUI();
+    }
+  }, 50);
+});
+</script>
+</body>
+</html>
