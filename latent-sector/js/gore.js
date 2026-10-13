@@ -114,7 +114,7 @@ function updScreenGore(dt){
 /* --- the lethal sequence --- */
 function goreTint(e,k){
   // per-entity material copies so only this body flushes and darkens
-  if(!e._gm){e._gm=[];e.g.traverse(o=>{if(o.isMesh&&o.material&&o.material.isMeshStandardMaterial){o.material=o.material.clone();e._gm.push({m:o.material,c0:o.material.color.clone()});}});}
+  if(!e._gm){e._gm=[];e.g.traverse(o=>{if(o.isMesh&&o.visible&&o.material&&o.material.isMeshStandardMaterial){if(!e.ownMats)o.material=o.material.clone();e._gm.push({m:o.material,c0:o.material.color.clone()});}});}
   for(const x of e._gm){x.m.color.copy(x.c0).lerp(_bc.setHex(0x3a0006),k*.8);x.m.emissive.setHex(0x120000).multiplyScalar(k*(.6+.4*Math.sin(e.dieT*30)));}
 }
 function goreSwell(e,dt){
@@ -124,10 +124,14 @@ function goreSwell(e,dt){
   e.g.scale.set(bulge+wob,1+k*.28-wob*.5,bulge-wob);
   e.g.position.y=k*.12;
   e.g.rotation.z=Math.sin(e.dieT*29)*.12*k;e.g.rotation.x=Math.sin(e.dieT*23)*.08*k;
-  e.head.scale.setScalar(1+k*.6+Math.sin(e.dieT*41)*.08*k);
-  e.armL.rotation.x=-1.2+Math.sin(e.dieT*31)*.9*k;e.armR.rotation.x=-1.4+Math.cos(e.dieT*27)*.9*k;e.armL.rotation.z=-.4*k;e.armR.rotation.z=.4*k;
-  e.legL.rotation.x=Math.sin(e.dieT*25)*.4*k;e.legR.rotation.x=-Math.sin(e.dieT*25)*.4*k;
-  goreTint(e,k);
+  // convulse every major joint around the pose they were caught in
+  const B=e.bones;
+  if(!e._dyBase){e._dyBase={};let i=0;for(const n of ['Spine','Spine1','Spine2','Neck','Head','LeftArm','RightArm','LeftForeArm','RightForeArm','LeftUpLeg','RightUpLeg','LeftLeg','RightLeg'])if(B[n])e._dyBase[n]={q:B[n].quaternion.clone(),f:23+i*3.7,ph:i++*1.3};}
+  for(const n in e._dyBase){const d=e._dyBase[n],amp=(/Arm/.test(n)?.9:/Leg/.test(n)?.35:.28)*k;
+    _gq.setFromEuler(_ge.set(Math.sin(e.dieT*d.f+d.ph)*amp,Math.cos(e.dieT*d.f*.8+d.ph)*amp*.6,Math.sin(e.dieT*d.f*1.2)*amp*.5));B[n].quaternion.copy(d.q).multiply(_gq);}
+  if(B.Head)B.Head.scale.setScalar(1+k*.55+Math.sin(e.dieT*41)*.08*k);
+  if(B.Spine2)B.Spine2.scale.setScalar(1+k*.35);
+  goreTint(e,k);if(e.shadow)e.shadow.visible=false;
   // ruptures: jets of blood from random points that intensify
   if(Math.random()<dt*(4+k*30)){const p=_dp.set(e.g.position.x+MR(-.25,.25),MR(.9,1.8),e.g.position.z+MR(-.25,.25));const dir=new V3(MR(-1,1),MR(.2,1),MR(-1,1)).normalize();
     for(let s=0;s<(6+k*18);s++)bloodDrop(p.x,p.y,p.z,dir.x*MR(1.5,4.5)+MR(-.4,.4),dir.y*MR(1,3.5),dir.z*MR(1.5,4.5)+MR(-.4,.4));}
@@ -135,8 +139,7 @@ function goreSwell(e,dt){
 }
 function goreBurst(e){
   const c=new V3(e.g.position.x,1.2,e.g.position.z);
-  const orig=m=>{const x=e._gm&&e._gm.find(q=>q.m===m);return x?x.c0.getHex():m.color.getHex();};
-  const coat=orig(e.armL.material),skin=orig(e.head.material);
+  const coat=e.coatHex??0x2a1f2f,skin=e.skinHex??0xc89f86;
   const dark=h=>_bc.setHex(h).lerp(new T.Color(0x3a0006),.45).getHex();
   SFX.gore&&SFX.gore();
   bloodSpray(c,900,7.5,2.6);bloodSpray(c,500,3,1.2,null,.7);

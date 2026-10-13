@@ -135,7 +135,7 @@ function players(){const a=[{idx:0,pos:P.pos}];if(PARTNER.active&&PARTNER.inGame
 function nearestPlayer(p){let best=null,bd=1e9;for(const pl of players()){const d=Math.hypot(pl.pos.x-p.x,pl.pos.z-p.z);if(d<bd){bd=d;best=pl;}}return {pl:best,d:bd};}
 function damagePlayer(idx,amt,kind){if(S.t<S.aiHold)return;if(idx===0)hurt(amt,kind);else netSend({t:'ev',ev:{k:'hurt',to:1,amt,kind}});}
 function hurt(amt,kind){
-  if(S.ended||S.cut)return;if(kind==='melee')screenSplat(.25+amt/40);P.hp-=amt;S.lastHurt=S.t;STATS.damage+=amt;P.cc+=amt*.12;SFX.hurt();$('#dmg').style.opacity=.9;
+  if(S.ended||S.cut)return;POST.dmg=Math.min(1,POST.dmg+.35+amt/40);if(kind==='melee')screenSplat(.25+amt/40);P.hp-=amt;S.lastHurt=S.t;STATS.damage+=amt;P.cc+=amt*.12;SFX.hurt();$('#dmg').style.opacity=.9;
   if(P.hp<=0){P.hp=60;P.cc+=12;voGun('arb_patch');toast('INTEGRITY CRITICAL','Med-patch applied · hue strained','',2.6);}
 }
 
@@ -665,7 +665,10 @@ function updAvatar(dt){
   const k=1-Math.exp(-14*dt);const dx=PARTNER.tx-av.g.position.x,dz=PARTNER.tz-av.g.position.z;
   if(dx*dx+dz*dz>64){av.g.position.set(PARTNER.tx,0,PARTNER.tz);av.lx=PARTNER.tx;av.lz=PARTNER.tz;}else{av.g.position.x+=dx*k;av.g.position.z+=dz*k;}
   let d=PARTNER.tyaw+Math.PI-av.g.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));av.g.rotation.y+=d*k;
-  animHuman(av,dt);av.armR.rotation.x=-Math.PI/2-PARTNER.pitch*.9;av.armL.rotation.x=-1.2-PARTNER.pitch*.5;av.armL.rotation.z=-.45;
+  animHuman(av,dt);
+  {const yaw=PARTNER.tyaw,p=PARTNER.pitch,B=av.bones;const d=new V3(-Math.sin(yaw)*Math.cos(p),Math.sin(p),-Math.cos(yaw)*Math.cos(p));
+   pointBone(B.RightArm,B.RightForeArm,d);pointBone(B.RightForeArm,B.RightHand,d);
+   const dl=d.clone().add(new V3(-Math.cos(yaw),0,Math.sin(yaw)).multiplyScalar(-.35)).add(new V3(0,-.15,0)).normalize();pointBone(B.LeftArm,B.LeftForeArm,dl,.85);pointBone(B.LeftForeArm,B.LeftHand,d,.85);}
   av.gun.mode=PARTNER.mode;gunMorph(av.gun,dt);
 }
 
@@ -792,6 +795,7 @@ function saveCallsign(){P.name=getCallsign();try{localStorage.setItem('ls-callsi
 function lobbyStatus(text,cls){for(const id of ['#netStatus','#guestStatus']){const el=$(id);el.textContent=text;el.className='netStatus '+(cls||'');}}
 if(IS_TOUCH){$('#keyList').innerHTML='<div><kbd>Left thumb</kbd> move</div><div><kbd>Right thumb</kbd> look</div><div><kbd>SCAN</kbd> hold to judge</div><div><kbd>FIRE</kbd> enforce</div><div><kbd>TRACE</kbd> hue pulse</div><div><kbd>CARE</kbd> refer citizen</div>';}
 $('#voiceTog').addEventListener('change',e=>{VO.enabled=e.target.checked;});
+$('#qualTog').addEventListener('change',e=>{setQuality(e.target.checked);});
 $('#goreTog').addEventListener('change',e=>{GORE.on=e.target.checked;try{localStorage.setItem('ls-gore',GORE.on?'1':'0');}catch(_){}});
 if(JOIN_CODE){$('#lobbyMain').hidden=true;$('#guestBox').hidden=false;$('#guestCode').textContent=JOIN_CODE;}
 $('#soloBtn').addEventListener('click',()=>{saveCallsign();initAudio();NET.role='solo';beginHostGame();});
@@ -857,7 +861,8 @@ function frame(now){
   const dt=Math.min((now-last)/1000,.05);last=now;
   if(HOLD)return;
   tick(dt,now/1000);
-  renderer.render(scene,camera);
+  perfWatch(dt);
+  renderFrame(dt);
 }
 function tick(dt,rt){
   S.rt=rt;
@@ -886,7 +891,15 @@ function tick(dt,rt){
 /* ---------- boot ---------- */
 (async function boot(){
   await loadFonts();
-  buildWorld();
+  const bar=$('#loadBar i'),lt=$('#loading div');
+  initEnvironment();
+  buildWorld();bar.style.width='20%';
+  initMirror();
+  lt.textContent='Loading citizens…';
+  try{await loadModels(p=>{bar.style.width=(20+p*75).toFixed(0)+'%';});}
+  catch(err){lt.textContent='The character models failed to load. Reload the page to try again.';console.error(err);return;}
+  bar.style.width='100%';
+  initPost();
   GUN=buildGun(camera,true);GUN.base=new V3(.26,-.24,-.5);GUN.root.position.copy(GUN.base);GUN.root.visible=false;GUN.kick=0;
   {const fill=new T.PointLight(0xbfd8ff,.9,2.2,2);fill.position.set(.1,.25,.1);camera.add(fill);
     GUN.mlight=new T.PointLight(0x6d8fa8,0,6,2);GUN.mlight.position.set(0,0,-.4);GUN.root.add(GUN.mlight);}
@@ -895,9 +908,9 @@ function tick(dt,rt){
   lockMat=new T.MeshBasicMaterial({color:0x39f0ff,transparent:true,opacity:.85,blending:T.AdditiveBlending,depthWrite:false,toneMapped:false});
   LOCKFX=new T.Group();scene.add(LOCKFX);LOCKFX.visible=false;
   {const a=new T.Mesh(new T.TorusGeometry(.8,.03,6,48),lockMat);a.rotation.x=Math.PI/2;LOCKFX.add(a);const b=new T.Mesh(new T.TorusGeometry(.95,.012,6,48),lockMat);b.rotation.x=Math.PI/2;LOCKFX.add(b);const c=new T.Mesh(new T.CylinderGeometry(.015,.015,3.4,6),lockMat);c.position.y=1.7;LOCKFX.add(c);}
-  PARTNER.av=makeAvatar(424242);initScreenGore();$('#goreTog').checked=GORE.on;
+  PARTNER.av=makeAvatar(424242);initScreenGore();$('#goreTog').checked=GORE.on;$('#qualTog').checked=QUALITY.high;
   spawnPopulation();setModeCss('locked');
   $('#loading').remove();
   requestAnimationFrame(frame);
-  window.__LS={hold:v=>{HOLD=v;},advance:(sec,step=.05)=>{for(let t=0;t<sec;t+=step){SIMRT+=step;tick(step,performance.now()/1000+SIMRT);}},render:()=>renderer.render(scene,camera),S,P,NET,NPCS,ENT,PARTNER,SC,STATS,OBJ_VIEW:()=>OBJ_VIEW,hostEnforce,evaluate,playCut,skipCut,fire,completeScan,look,KEYS,later};
+  window.__LS={hold:v=>{HOLD=v;},advance:(sec,step=.05)=>{for(let t=0;t<sec;t+=step){SIMRT+=step;tick(step,performance.now()/1000+SIMRT);}},render:()=>renderFrame(.016),S,P,NET,NPCS,ENT,PARTNER,SC,STATS,OBJ_VIEW:()=>OBJ_VIEW,hostEnforce,evaluate,playCut,skipCut,fire,completeScan,look,KEYS,later};
 })();

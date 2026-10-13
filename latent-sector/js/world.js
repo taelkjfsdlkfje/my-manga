@@ -3,7 +3,7 @@
 const BOXES=[],BUILDINGS=[],BEACONS=[],FLICKER=[],FLYERS=[],MIST=[];
 const PLAZA={};
 const BOARD={};
-let sky,rainGeo,rainPos,RN,PATROL;
+let sky,rainGeo,rainPos,RN,PATROL,GROUND=null;
 const LATIN=["OKAMI RAMEN","HUE CARE","NEURO BAR","KAGERO ARCADE","PACHINKO 777","CAPSULE INN","SYNTH SAKE","MEMORY PARLOR","CLEAR MIND","NOODLE 24H","DATA DEN","IRIS TATTOO","KARAOKE 5F","LUCKY CAT"];
 
 function addBox(cx,cz,w,d,low){BOXES.push({x0:cx-w/2,x1:cx+w/2,z0:cz-d/2,z1:cz+d/2,low:!!low});}
@@ -27,27 +27,61 @@ function scaledBox(w,h,d){
   for(let f=0;f<6;f++)for(let k=0;k<4;k++){const i=f*4+k;if(f===2||f===3){uv.setXY(i,.002,.002);continue;}const span=f<2?d:w;uv.setXY(i,uv.getX(i)*span/16+ou,uv.getY(i)*h/48+ov);}
   uv.needsUpdate=true;return g;
 }
-function makeWindowTex(i){
-  const c=document.createElement('canvas');c.width=128;c.height=256;const g=c.getContext('2d');
-  g.fillStyle='#000';g.fillRect(0,0,128,256);
+/* facade set: base color, lit-window emission, roughness and a normal map, one 8x16-window tile (2 m x 3 m cells) */
+function makeFacade(i){
+  const W=256,H=512,cw=32,ch=32;
+  const mk=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return [c,c.getContext('2d')];};
+  const [cb,gb]=mk(),[ce,ge]=mk(),[cr,gr]=mk(),[chh,gh]=mk();
   const pal=[['#ffcf8a','#ffb066','#ffe6b8'],['#7fd8ff','#a8c8ff','#d8f4ff'],['#ff7ac8','#b48cff','#7fd8ff'],['#ffd27a','#7fffd4','#ffffff'],['#ff9a6b','#ffcf8a','#8affff']][i%5];
   const litP=[.2,.28,.17,.24,.3][i%5];
+  const wallC=['#24222c','#1c2230','#2a2228','#20242a','#262430'][i%5];
+  const style=i%3; // 0 punched windows, 1 ribbon glazing, 2 panelled tower
+  gb.fillStyle=wallC;gb.fillRect(0,0,W,H);
+  for(let k=0;k<1800;k++){const v=(rng()*30)|0;gb.fillStyle=`rgba(${v},${v},${v+6},.18)`;gb.fillRect(rng()*W,rng()*H,R(1,3),R(1,6));}
+  for(let k=0;k<40;k++){const x=rng()*W;const g2=gb.createLinearGradient(0,0,0,H);g2.addColorStop(0,'rgba(0,0,0,0)');g2.addColorStop(1,'rgba(0,0,0,.35)');gb.fillStyle=g2;gb.fillRect(x,rng()*H,R(1,4),R(20,120));} // rain streaks / grime
+  ge.fillStyle='#000';ge.fillRect(0,0,W,H);
+  gr.fillStyle='rgb(200,200,200)';gr.fillRect(0,0,W,H);
+  gh.fillStyle='rgb(140,140,140)';gh.fillRect(0,0,W,H);
+  // panel seams
+  gh.fillStyle='rgb(100,100,100)';for(let x=0;x<W;x+=cw*(style===2?1:2))gh.fillRect(x,0,1,H);for(let y=0;y<H;y+=ch)gh.fillRect(0,y+ch-2,W,2);
   for(let r=0;r<16;r++){
-    if(rng()<.07){g.globalAlpha=.9;g.fillStyle=pick(NEON_CSS);g.fillRect(0,r*16+7,128,2);continue;}
+    if(rng()<.06){ge.globalAlpha=.9;ge.fillStyle=pick(NEON_CSS);ge.fillRect(0,r*ch+ch-5,W,2);continue;}
     for(let col=0;col<8;col++){
-      if(rng()<litP){g.globalAlpha=R(.3,1);g.fillStyle=pick(pal);g.fillRect(col*16+3,r*16+4,10,8);}
-      else if(rng()<.18){g.globalAlpha=.1;g.fillStyle='#8aa0ff';g.fillRect(col*16+3,r*16+4,10,8);}
+      let x0=col*cw+5,y0=r*ch+6,w=cw-10,h=ch-13;
+      if(style===1){x0=col*cw;w=cw;y0=r*ch+7;h=ch-14;}
+      if(style===2){x0=col*cw+3;w=cw-6;y0=r*ch+4;h=ch-9;}
+      // frame (raised) then recessed glass
+      gh.fillStyle='rgb(175,175,175)';gh.fillRect(x0-2,y0-2,w+4,h+4);gh.fillStyle='rgb(70,70,70)';gh.fillRect(x0,y0,w,h);
+      gb.fillStyle='#07090e';gb.fillRect(x0,y0,w,h);
+      const sky=gb.createLinearGradient(0,y0,0,y0+h);sky.addColorStop(0,'rgba(90,70,140,.35)');sky.addColorStop(1,'rgba(10,10,20,0)');gb.fillStyle=sky;gb.fillRect(x0,y0,w,h);
+      gr.fillStyle='rgb(18,18,18)';gr.fillRect(x0,y0,w,h);
+      gb.fillStyle='#3a3c46';gb.fillRect(x0+(w>>1),y0,1,h); // mullion
+      if(rng()<litP){
+        const c0=pick(pal),a=R(.35,1);
+        const g2=ge.createLinearGradient(0,y0,0,y0+h);g2.addColorStop(0,c0);g2.addColorStop(1,'rgba(0,0,0,.2)');
+        ge.globalAlpha=a;ge.fillStyle=g2;ge.fillRect(x0,y0,w,h);
+        if(rng()<.4){ge.globalAlpha=a*.85;ge.fillStyle='rgba(0,0,0,.55)';for(let yy=y0;yy<y0+h*R(.3,.9);yy+=3)ge.fillRect(x0,yy,w,1);} // blinds
+        if(rng()<.15){ge.globalAlpha=1;ge.fillStyle='rgba(0,0,0,.8)';const px=x0+R(2,w-8);ge.beginPath();ge.arc(px+3,y0+h-11,3,0,TAU);ge.fill();ge.fillRect(px,y0+h-8,6,8);} // someone at the window
+        ge.globalAlpha=1;ge.fillStyle='rgba(0,0,0,.9)';ge.fillRect(x0+(w>>1),y0,1,h);
+      }else if(rng()<.2){ge.globalAlpha=.12;ge.fillStyle='#8aa0ff';ge.fillRect(x0,y0,w,h);ge.globalAlpha=1;}
     }
   }
-  g.globalAlpha=1;const t=canvasTex(c);t.wrapS=t.wrapT=T.RepeatWrapping;return t;
+  // height -> normal
+  const hd=gh.getImageData(0,0,W,H).data,nd=gb.createImageData(W,H),o=nd.data,s=2.2;
+  const hv=(x,y)=>hd[(((y+H)%H)*W+((x+W)%W))*4]/255;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const dx=(hv(x+1,y)-hv(x-1,y))*s,dy=(hv(x,y+1)-hv(x,y-1))*s;const l=Math.hypot(dx,dy,1);const j=(y*W+x)*4;o[j]=(-dx/l*.5+.5)*255;o[j+1]=(dy/l*.5+.5)*255;o[j+2]=(1/l*.5+.5)*255;o[j+3]=255;}
+  const cn=document.createElement('canvas');cn.width=W;cn.height=H;cn.getContext('2d').putImageData(nd,0,0);
+  const tx=(c,srgb)=>{const t=srgb?canvasTex(c):new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=8;return t;};
+  return {base:tx(cb,true),emi:tx(ce,true),rough:tx(cr,false),normal:tx(cn,false)};
 }
+function makeWindowTex(i){return makeFacade(i).emi;}
 function streakTexture(){const c=document.createElement('canvas');c.width=64;c.height=256;const g=c.getContext('2d');let gr=g.createLinearGradient(0,0,0,256);gr.addColorStop(0,'rgba(255,255,255,.95)');gr.addColorStop(.35,'rgba(255,255,255,.35)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,64,256);g.globalCompositeOperation='destination-in';gr=g.createLinearGradient(0,0,64,0);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(.5,'rgba(0,0,0,1)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,64,256);return canvasTex(c);}
 function addBeacon(x,y,z){const s=new T.Sprite(new T.SpriteMaterial({map:DOT,color:0xff2040,blending:T.AdditiveBlending,depthWrite:false,toneMapped:false,transparent:true}));s.position.set(x,y+.3,z);s.scale.set(2.2,2.2,1);scene.add(s);BEACONS.push(s);return s;}
 
 function buildWorld(){
-  const WIN=[0,1,2,3,4].map(makeWindowTex);
-  const BMATS=WIN.map(t=>new T.MeshStandardMaterial({color:0x0b0a12,roughness:.5,metalness:.45,emissive:0xffffff,emissiveMap:t,emissiveIntensity:1.3}));
-  const FARMATS=WIN.map(t=>new T.MeshBasicMaterial({map:t,color:0x77739e,fog:false}));
+  const FAC=[0,1,2,3,4,5].map(makeFacade);
+  const BMATS=FAC.map(f=>new T.MeshStandardMaterial({map:f.base,color:0x6a6a74,roughness:1,roughnessMap:f.rough,metalness:.35,normalMap:f.normal,normalScale:new T.Vector2(1.3,1.3),emissive:0xffffff,emissiveMap:f.emi,emissiveIntensity:1.55,envMapIntensity:1.1}));
+  const FARMATS=FAC.map(f=>new T.MeshBasicMaterial({map:f.emi,color:0x8a86b0,fog:false}));
   const STREAK=streakTexture();
 
   sky=new T.Mesh(new T.SphereGeometry(520,32,16),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,fog:false,
@@ -61,9 +95,20 @@ function buildWorld(){
     for(let i=0;i<70;i++){const x=rng()*256,y=rng()*256,r=R(8,34);const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(20,20,20,.95)');gr.addColorStop(1,'rgba(20,20,20,0)');g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2);}
     for(let i=0;i<2500;i++){g.fillStyle=`rgba(${rng()<.5?220:60},${rng()<.5?220:60},${rng()<.5?220:60},.12)`;g.fillRect(rng()*256,rng()*256,1.5,1.5);}
     const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(60,60);
-    const ground=new T.Mesh(new T.PlaneGeometry(520,520),new T.MeshStandardMaterial({color:0x0e0e16,roughness:1,roughnessMap:t,metalness:.75}));
-    ground.rotation.x=-Math.PI/2;scene.add(ground);}
-  const SLAB_MAT=new T.MeshStandardMaterial({color:0x1d1b26,roughness:.35,metalness:.55});
+    const ca=document.createElement('canvas');ca.width=ca.height=256;const ga=ca.getContext('2d');ga.drawImage(c,0,0);
+    const id=ga.getImageData(0,0,256,256),dd=id.data;for(let k=0;k<dd.length;k+=4){const v=dd[k]/255;const a=v<.3?30:clamp(150+(v-.55)*500,90,225);dd[k]=dd[k+1]=dd[k+2]=a;}ga.putImageData(id,0,0);
+    const ta=new T.CanvasTexture(ca);ta.wrapS=ta.wrapT=T.RepeatWrapping;ta.repeat.set(60,60);
+    const cb=document.createElement('canvas');cb.width=cb.height=256;const gb2=cb.getContext('2d');gb2.fillStyle='#16161c';gb2.fillRect(0,0,256,256);
+    for(let k=0;k<5000;k++){const v=(R(10,48))|0;gb2.fillStyle=`rgba(${v},${v},${v+4},.5)`;gb2.fillRect(rng()*256,rng()*256,R(1,2.5),R(1,2.5));}
+    for(let k=0;k<14;k++){gb2.strokeStyle=`rgba(0,0,0,${R(.2,.5)})`;gb2.lineWidth=R(.5,1.5);gb2.beginPath();let x=rng()*256,y=rng()*256;gb2.moveTo(x,y);for(let q=0;q<6;q++){x+=R(-20,20);y+=R(-20,20);gb2.lineTo(x,y);}gb2.stroke();}
+    const tb=canvasTex(cb);tb.wrapS=tb.wrapT=T.RepeatWrapping;tb.repeat.set(60,60);tb.anisotropy=8;
+    const ground=new T.Mesh(new T.PlaneGeometry(520,520),new T.MeshStandardMaterial({map:tb,color:0x9a9aa4,roughness:1,roughnessMap:t,metalness:.6,envMapIntensity:.8}));
+    ground.userData.alpha=ta;ground.rotation.x=-Math.PI/2;ground.position.y=.012;scene.add(ground);GROUND=ground;}
+  const SLAB_MAT=(()=>{const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');g.fillStyle='#2a2832';g.fillRect(0,0,256,256);
+    for(let y=0;y<8;y++)for(let x=0;x<8;x++){const v=(R(30,52))|0;g.fillStyle=`rgb(${v},${v-2},${v+6})`;g.fillRect(x*32+1+(y%2)*16,y*32+1,30,30);}
+    const n=document.createElement('canvas');n.width=n.height=256;const gn=n.getContext('2d');gn.fillStyle='rgb(128,128,255)';gn.fillRect(0,0,256,256);gn.fillStyle='rgb(128,100,230)';for(let y=0;y<8;y++)gn.fillRect(0,y*32,256,2);
+    const t=canvasTex(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(8,8);t.anisotropy=8;const tn=new T.CanvasTexture(n);tn.wrapS=tn.wrapT=T.RepeatWrapping;tn.repeat.set(8,8);
+    return new T.MeshStandardMaterial({map:t,normalMap:tn,roughness:.28,metalness:.4,envMapIntensity:1.2});})();
   const CURB_MAT=new T.MeshStandardMaterial({color:0x2c2a36,roughness:.6,metalness:.3});
   const slab=(cx,cz,half)=>{const m=new T.Mesh(new T.BoxGeometry(half*2,.14,half*2),SLAB_MAT);m.position.set(cx,.07,cz);scene.add(m);};
   // road markings
@@ -201,18 +246,11 @@ function buildWorld(){
       FLYERS.push({g,r:R(70,190),a:rng()*TAU,sp:R(.05,.13)*(rng()<.5?-1:1),y:R(34,95),cx:R(-30,30),cz:R(-30,30)});}}
 
   // patrol car (lands during the intro, then parks)
-  {const g=new T.Group();const bm=new T.MeshStandardMaterial({color:0x10141f,metalness:.9,roughness:.25});
-    const body=new T.Mesh(new T.BoxGeometry(1.9,.8,4.4),bm);body.position.y=.75;g.add(body);
-    const cab=new T.Mesh(new T.BoxGeometry(1.6,.6,2),new T.MeshStandardMaterial({color:0x0a1a24,metalness:.9,roughness:.1}));cab.position.set(0,1.38,-.2);g.add(cab);
-    const stripe=new T.Mesh(new T.BoxGeometry(1.95,.08,4.45),neonMat(0x39f0ff));stripe.position.y=.62;g.add(stripe);
-    const red=new T.MeshBasicMaterial({color:0xff2040,toneMapped:false}),blue=new T.MeshBasicMaterial({color:0x2060ff,toneMapped:false});
-    const lr=new T.Mesh(new T.BoxGeometry(.6,.12,.25),red);lr.position.set(-.35,1.75,-.2);g.add(lr);
-    const lb=new T.Mesh(new T.BoxGeometry(.6,.12,.25),blue);lb.position.set(.35,1.75,-.2);g.add(lb);
-    const hl=new T.Mesh(new T.BoxGeometry(1.5,.1,.06),new T.MeshBasicMaterial({color:0xeaf4ff,toneMapped:false}));hl.position.set(0,.8,-2.22);g.add(hl);
-    const thr=new T.Mesh(new T.CylinderGeometry(.5,.7,.1,16),new T.MeshBasicMaterial({color:0x39f0ff,transparent:true,opacity:.5,blending:T.AdditiveBlending,toneMapped:false}));thr.position.y=.3;g.add(thr);
-    const pl=new T.PointLight(0xff2040,0,14,2);pl.position.set(0,2.4,0);g.add(pl);
-    g.position.set(0,0.0,34);scene.add(g);addBox(0,34,2,4.6,true);
-    PATROL={g,red,blue,pl,thr,land:1};}
+  {const car=makeCar({police:true});car.g.position.set(0,0,34);scene.add(car.g);addBox(0,34,2.1,4.8,true);
+    const pl=new T.PointLight(0xff2040,0,16,2);pl.position.set(0,2.4,0);car.g.add(pl);
+    PATROL={g:car.g,red:car.red,blue:car.blue,pl,thr:car.thr,land:1};}
+
+  buildDetail();
 
   // rain & mist
   RN=IS_TOUCH?1500:2800;rainPos=new Float32Array(RN*6);
@@ -256,4 +294,5 @@ function updateWorld(dt,t){
     if(rainPos[j+4]<0||Math.abs(rainPos[j]-cx)>27||Math.abs(rainPos[j+2]-cz)>27)respawnDrop(i,cx,cz,rainPos[j+4]<0);}
   rainGeo.attributes.position.needsUpdate=true;
   sky.position.copy(camera.position);
+  updateDetail(dt,t);
 }

@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;600&family=Chakra+Petch:wght@500;700&display=swap">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 <div id="app">
@@ -145,7 +145,7 @@
         <div><kbd>Space</kbd> skip cutscene</div>
         <div><kbd>V</kbd> voice on / off</div>
       </div>
-      <div class="btnRow"><label class="tog"><input type="checkbox" id="voiceTog" checked> Voice acting</label><label class="tog"><input type="checkbox" id="goreTog" checked> Graphic violence</label></div>
+      <div class="btnRow"><label class="tog"><input type="checkbox" id="voiceTog" checked> Voice acting</label><label class="tog"><input type="checkbox" id="goreTog" checked> Graphic violence</label><label class="tog"><input type="checkbox" id="qualTog"> High-end graphics</label></div>
       <p class="fine">Headphones recommended. Best with mouse and keyboard; touch controls appear on phones and tablets.</p>
     </div>
   </section>
@@ -169,16 +169,29 @@
     </div>
   </section>
 
-  <div id="loading">Booting city grid…</div>
+  <div id="loading"><div>Booting city grid…</div><div id="loadBar"><i></i></div></div>
 </div>
 <script src="vendor/three.min.js"></script>
+<script src="vendor/GLTFLoader.js"></script>
+<script src="vendor/SkeletonUtils.js"></script>
+<script src="vendor/RoundedBoxGeometry.js"></script>
+<script src="vendor/Reflector.js"></script>
+<script src="vendor/CopyShader.js"></script>
+<script src="vendor/LuminosityHighPassShader.js"></script>
+<script src="vendor/EffectComposer.js"></script>
+<script src="vendor/RenderPass.js"></script>
+<script src="vendor/ShaderPass.js"></script>
+<script src="vendor/UnrealBloomPass.js"></script>
 <script src="vendor/peerjs.min.js"></script>
 <script src="vo/lines.js"></script>
-<script src="js/core.js"></script>
-<script src="js/world.js"></script>
-<script src="js/actors.js"></script>
-<script src="js/gore.js"></script>
-<script src="js/net.js"></script>
-<script src="js/game.js"></script>
+<script src="js/core.js?v=3"></script>
+<script src="js/world.js?v=3"></script>
+<script src="js/detail.js?v=3"></script>
+<script src="js/models.js?v=3"></script>
+<script src="js/actors.js?v=3"></script>
+<script src="js/gore.js?v=3"></script>
+<script src="js/post.js?v=3"></script>
+<script src="js/net.js?v=3"></script>
+<script src="js/game.js?v=3"></script>
 </body>
 </html>
