@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Latent Sector</title>
+<meta name="description" content="Co-op 3D tech demo: judge citizens by their crime coefficient in a rain-soaked neon district.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;600&family=Chakra+Petch:wght@500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="view" tabindex="0" aria-label="Game view"></canvas>
+  <div id="fx"></div>
+  <div id="scanTint"></div>
+  <div id="dmg"></div>
+  <div id="glitch" hidden><i></i><i></i><i></i><i></i></div>
+  <div id="lbTop" class="lb"></div><div id="lbBot" class="lb"></div>
+  <div id="card" hidden><div class="cardJP" id="cardJP"></div><div class="cardT" id="cardT"></div><div class="cardS" id="cardS"></div></div>
+  <div id="cutSubs"></div>
+  <button id="skipBtn" hidden>Skip ▸ <kbd>Space</kbd></button>
+
+  <div id="hud" hidden>
+    <div id="markers"></div>
+    <div id="tags"></div>
+    <div id="locktag" hidden></div>
+
+    <div id="objPanel" class="panel">
+      <div class="eyebrow">Ward 7 · Kagero District <span id="netPill" hidden></span></div>
+      <ul id="objList"></ul>
+    </div>
+
+    <div id="rightCol">
+      <div id="statPanel" class="panel">
+        <div class="stat">
+          <span class="lbl">Area stress <i>区域ストレス</i></span>
+          <div class="bar"><b id="stressBar"></b></div><span id="stressVal" class="num">40%</span>
+        </div>
+        <div class="stat">
+          <span class="lbl">Your hue <i>色相</i></span>
+          <div class="selfRow"><span id="selfSwatch" class="swatch"></span><span id="selfHue" class="hueName">Clear Aquamarine</span></div><span id="selfCC" class="num big">032</span>
+        </div>
+        <div class="stat">
+          <span class="lbl">Integrity</span>
+          <div class="bar"><b id="hpBar" style="width:100%"></b></div><span id="hpVal" class="num">100</span>
+        </div>
+        <div id="traceStat">Hue trace [F] ready</div>
+      </div>
+      <div id="partnerPanel" class="panel" hidden>
+        <div class="lbl">Partner <i id="ptName">—</i></div>
+        <div class="stat">
+          <div class="bar"><b id="ptHp" style="width:100%"></b></div><span id="ptDist" class="num">0m</span>
+        </div>
+        <div class="selfRow"><span id="ptSwatch" class="swatch"></span><span id="ptHue" class="hueName">—</span><span id="ptCC" class="num">000</span></div>
+      </div>
+    </div>
+
+    <svg id="reticle" viewBox="0 0 132 132" aria-hidden="true">
+      <circle class="ring" cx="66" cy="66" r="44"></circle>
+      <circle class="prog" id="retProg" cx="66" cy="66" r="52"></circle>
+      <path class="br" id="brTL" d="M40 52 V40 H52"></path>
+      <path class="br" id="brTR" d="M80 40 H92 V52"></path>
+      <path class="br" id="brBL" d="M40 80 V92 H52"></path>
+      <path class="br" id="brBR" d="M80 92 H92 V80"></path>
+      <circle class="dot" cx="66" cy="66" r="2"></circle>
+    </svg>
+
+    <div id="scanbox" class="panel" hidden>
+      <div class="sb-head"><span id="sbName">—</span><span id="sbId"></span></div>
+      <div class="sb-cc"><span class="lbl">Crime coefficient<i>犯罪係数</i></span><span id="sbCC">000</span></div>
+      <div class="sb-hue"><span id="sbSwatch" class="swatch"></span><span id="sbHue">—</span></div>
+      <div id="sbVerdict"></div>
+    </div>
+
+    <div id="modePanel" class="panel">
+      <div id="weaponName">ARBITER · PUBLIC SAFETY SIDEARM</div>
+      <div id="modeJP">施錠</div>
+      <div id="modeName">TRIGGER LOCKED</div>
+      <div id="modeSub">Scan a citizen to judge</div>
+    </div>
+
+    <div id="prompt" hidden></div>
+    <div id="subs"></div>
+    <div id="toast"><b id="toastT"></b><span id="toastS"></span></div>
+    <div id="aimHint" hidden>Click to aim</div>
+  </div>
+
+  <div id="touch" hidden>
+    <div id="joy"><i></i></div>
+    <button id="tPause">PAUSE</button>
+    <div class="tbtns">
+      <button class="scan" id="tScan">SCAN</button>
+      <button class="fire" id="tFire">FIRE</button>
+      <button id="tTrace">TRACE</button>
+      <button id="tCare">CARE</button>
+    </div>
+  </div>
+
+  <section id="title" class="screen">
+    <div class="card">
+      <div class="titleRow">
+        <div class="vjp">潜在犯区域</div>
+        <div>
+          <h1>LATENT<br>SECTOR</h1>
+          <div class="tagline">Ward 7 · Kagero District · 02:14 · Heavy rain</div>
+        </div>
+      </div>
+      <p class="brief">The city reads every citizen's mind as a color and a number. Your sidearm, the <b>Arbiter</b>, only fires when that number says it may. Patrol alone or with a partner.</p>
+      <div class="modes">
+        <div style="--c:#8fa8bf"><b>LOCKED</b><span>under 100</span></div>
+        <div style="--c:#39f0ff"><b>PARALYZER</b><span>100 – 299 · stun</span></div>
+        <div style="--c:#ff2d55"><b>LETHAL</b><span>300+ · eliminate</span></div>
+        <div style="--c:#b18cff"><b>DECONSTRUCT</b><span>hostile machines</span></div>
+      </div>
+
+      <div class="lobby panel" id="lobby">
+        <div class="field"><label for="callsign">Callsign</label><input id="callsign" maxlength="14" autocomplete="off" spellcheck="false"></div>
+        <div id="lobbyMain" class="lobbyGrid">
+          <button class="go" id="soloBtn">Solo patrol</button>
+          <button class="ghost" id="hostBtn">Host co-op</button>
+          <div class="joinRow"><input id="joinCode" placeholder="Room code" maxlength="5" autocomplete="off" spellcheck="false" aria-label="Room code"><button class="ghost" id="joinBtn">Join</button></div>
+        </div>
+        <div id="hostBox" hidden>
+          <div class="roomLine">Room <b id="roomCode">·····</b> <span id="netStatus" class="netStatus">Opening room…</span></div>
+          <div class="linkRow"><input id="inviteLink" readonly aria-label="Invite link"><button class="ghost" id="copyBtn">Copy link</button></div>
+          <p class="fine">Send this link to a friend. They can join before you start or drop in mid-mission.</p>
+          <div class="btnRow"><button class="go" id="startBtn">Start mission</button><button class="ghost" id="cancelHostBtn">Cancel</button></div>
+        </div>
+        <div id="guestBox" hidden>
+          <div class="roomLine">Joining room <b id="guestCode">·····</b></div>
+          <div id="guestStatus" class="netStatus">Enter a callsign, then join.</div>
+          <div class="btnRow"><button class="go" id="guestJoinBtn">Join patrol</button><button class="ghost" id="guestSoloBtn">Play solo instead</button></div>
+        </div>
+      </div>
+
+      <div class="keys" id="keyList">
+        <div><kbd>WASD</kbd> move</div>
+        <div><kbd>Shift</kbd> sprint</div>
+        <div><kbd>RMB / Q</kbd> hold to scan</div>
+        <div><kbd>LMB</kbd> fire</div>
+        <div><kbd>F</kbd> hue trace</div>
+        <div><kbd>E</kbd> refer to care</div>
+        <div><kbd>Space</kbd> skip cutscene</div>
+        <div><kbd>V</kbd> voice on / off</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="voiceTog" checked> Voice acting</label>
+      <p class="fine">Headphones recommended. Best with mouse and keyboard; touch controls appear on phones and tablets.</p>
+    </div>
+  </section>
+
+  <section id="pause" class="screen" hidden>
+    <div class="card">
+      <div class="eyebrow">Patrol suspended</div>
+      <h1 style="font-size:clamp(36px,6vw,64px)">PAUSED</h1>
+      <p class="fine" id="pauseNote"></p>
+      <div class="btnRow"><button class="go" id="resumeBtn">Resume</button><button class="ghost" id="restartBtn">Leave and restart</button></div>
+    </div>
+  </section>
+
+  <section id="end" class="screen" hidden>
+    <div class="card">
+      <div class="eyebrow">Enforcement report · Ward 7</div>
+      <h1 style="font-size:clamp(34px,6vw,60px)">SHIFT LOGGED</h1>
+      <div id="reports"></div>
+      <div class="anomaly"><b>ANOMALY 7-0 · OPEN</b><br>Subject Seiji Amane registered a crime coefficient of 0 while standing over an assault victim. The system cannot judge him. The case stays open.</div>
+      <div class="btnRow"><button class="go" id="freeBtn">Keep patrolling</button><button class="ghost" id="againBtn">Restart district</button></div>
+    </div>
+  </section>
+
+  <div id="loading">Booting city grid…</div>
+</div>
+<script src="vendor/three.min.js"></script>
+<script src="vendor/peerjs.min.js"></script>
+<script src="vo/lines.js"></script>
+<script src="js/core.js"></script>
+<script src="js/world.js"></script>
+<script src="js/actors.js"></script>
+<script src="js/net.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
