@@ -60,7 +60,7 @@ function applyEv(ev){
     case 'cut':playCut(ev.id,ev.arg);break;
     case 'fx':applyFx(ev);break;
     case 'credit':if(ev.to===myIdx()){STATS[ev.what]=(STATS[ev.what]||0)+1;if(ev.vo)voGun(ev.vo);if(ev.strain){P.cc+=ev.strain;STATS.witnesses+=ev.w||0;}if(ev.what==='referred'){P.cc=Math.max(0,P.cc-3);}}break;
-    case 'hurt':if(ev.to===myIdx())hurt(ev.amt);break;
+    case 'hurt':if(ev.to===myIdx())hurt(ev.amt,ev.kind);break;
     case 'end':showEnd();break;
     case 'carpark':PATROL.g.position.y=0;break;
     case 'meta':{const e=ENT.get(ev.id);if(e){Object.assign(e,ev.patch);Object.assign(e.spec,ev.patch);}break;}
@@ -96,7 +96,7 @@ function doFlash(pos,color,i){flash.position.copy(pos);flash.color.set(color);fl
 function shotFx(kind,from,e){
   const to=chestOf(e);
   if(kind==='paralyzer'){SFX.para();spawnBolt(from,e);doFlash(from,0x39f0ff,4);}
-  else if(kind==='lethal'){SFX.boom();spawnBeam(from,to,0xff2d55,.05,.35);spawnBeam(from,to,0xffd0d8,.015,.25);doFlash(to,0xff3050,9);}
+  else if(kind==='lethal'){SFX.boom();spawnBeam(from,to,0xff2d55,.05,.35);spawnBeam(from,to,0xffd0d8,.015,.25);doFlash(to,0xff3050,9);goreImpact(to,from);}
   else{SFX.decon();spawnBeam(from,to,0xb18cff,.09,.5);spawnSphere(to,0xb18cff,e.kind==='mech'?4.5:3.2,.9);doFlash(to,0xb18cff,10);}
 }
 function applyFx(ev){
@@ -133,9 +133,9 @@ function syncOrbsGuest(arr){
 /* ---------- players ---------- */
 function players(){const a=[{idx:0,pos:P.pos}];if(PARTNER.active&&PARTNER.inGame)a.push({idx:1,pos:PARTNER.pos});return a;}
 function nearestPlayer(p){let best=null,bd=1e9;for(const pl of players()){const d=Math.hypot(pl.pos.x-p.x,pl.pos.z-p.z);if(d<bd){bd=d;best=pl;}}return {pl:best,d:bd};}
-function damagePlayer(idx,amt){if(S.t<S.aiHold)return;if(idx===0)hurt(amt);else netSend({t:'ev',ev:{k:'hurt',to:1,amt}});}
-function hurt(amt){
-  if(S.ended||S.cut)return;P.hp-=amt;S.lastHurt=S.t;STATS.damage+=amt;P.cc+=amt*.12;SFX.hurt();$('#dmg').style.opacity=.9;
+function damagePlayer(idx,amt,kind){if(S.t<S.aiHold)return;if(idx===0)hurt(amt,kind);else netSend({t:'ev',ev:{k:'hurt',to:1,amt,kind}});}
+function hurt(amt,kind){
+  if(S.ended||S.cut)return;if(kind==='melee')screenSplat(.25+amt/40);P.hp-=amt;S.lastHurt=S.t;STATS.damage+=amt;P.cc+=amt*.12;SFX.hurt();$('#dmg').style.opacity=.9;
   if(P.hp<=0){P.hp=60;P.cc+=12;voGun('arb_patch');toast('INTEGRITY CRITICAL','Med-patch applied · hue strained','',2.6);}
 }
 
@@ -251,10 +251,10 @@ function aiHuman(e,dt){
       const dx=np.pl.pos.x-e.g.position.x,dz=np.pl.pos.z-e.g.position.z,d=Math.hypot(dx,dz);
       if(d>1.5){const sp=e.aggroSpeed||6.2;e.g.position.x+=dx/d*sp*dt;e.g.position.z+=dz/d*sp*dt;resolveCircle(e.g.position,.4);}
       turnTo(e,Math.atan2(dx,dz),dt,10);
-      if(d<1.6&&e.atkT<=0&&S.t>S.aiHold){e.atkT=1.15;e.flags|=F_ATTACK;e.atkFlagT=.28;const target=np.pl.idx,dmg=e.dmg||14;later(.18,()=>{if(alive(e)){const pl=players().find(p=>p.idx===target);if(pl&&Math.hypot(pl.pos.x-e.g.position.x,pl.pos.z-e.g.position.z)<2.2)damagePlayer(target,dmg);}});}
+      if(d<1.6&&e.atkT<=0&&S.t>S.aiHold){e.atkT=1.15;e.flags|=F_ATTACK;e.atkFlagT=.28;const target=np.pl.idx,dmg=e.dmg||14;later(.18,()=>{if(alive(e)){const pl=players().find(p=>p.idx===target);if(pl&&Math.hypot(pl.pos.x-e.g.position.x,pl.pos.z-e.g.position.z)<2.2)damagePlayer(target,dmg,'melee');}});}
       break;}
     case 'leave':{e.leaveT=(e.leaveT||0)+dt;moveToward(e,-53,-30,1.3,dt);if(e.leaveT>4.5)e.sc=Math.max(0,1-(e.leaveT-4.5)/1.6);if(e.sc<=0)setEntState(e,'gone');break;}
-    case 'dying':e.dieT2=(e.dieT2||0)+dt;if(e.dieT2>.16){setEntState(e,'gone');onNeutralized(e,'eliminated');}break;
+    case 'dying':e.dieT2=(e.dieT2||0)+dt;if(e.dieT2>.72){setEntState(e,'gone');onNeutralized(e,'eliminated');}break;
   }
 }
 function aiDrone(e,dt){
@@ -792,6 +792,7 @@ function saveCallsign(){P.name=getCallsign();try{localStorage.setItem('ls-callsi
 function lobbyStatus(text,cls){for(const id of ['#netStatus','#guestStatus']){const el=$(id);el.textContent=text;el.className='netStatus '+(cls||'');}}
 if(IS_TOUCH){$('#keyList').innerHTML='<div><kbd>Left thumb</kbd> move</div><div><kbd>Right thumb</kbd> look</div><div><kbd>SCAN</kbd> hold to judge</div><div><kbd>FIRE</kbd> enforce</div><div><kbd>TRACE</kbd> hue pulse</div><div><kbd>CARE</kbd> refer citizen</div>';}
 $('#voiceTog').addEventListener('change',e=>{VO.enabled=e.target.checked;});
+$('#goreTog').addEventListener('change',e=>{GORE.on=e.target.checked;try{localStorage.setItem('ls-gore',GORE.on?'1':'0');}catch(_){}});
 if(JOIN_CODE){$('#lobbyMain').hidden=true;$('#guestBox').hidden=false;$('#guestCode').textContent=JOIN_CODE;}
 $('#soloBtn').addEventListener('click',()=>{saveCallsign();initAudio();NET.role='solo';beginHostGame();});
 $('#hostBtn').addEventListener('click',()=>{
@@ -868,7 +869,7 @@ function tick(dt,rt){
   updateWorld(dt,S.t);
   if(AUTH())hostSim(dt);else interpEntities(dt);
   for(const e of NPCS)animEntity(e,dt);
-  updParticles(dt);updFX(dt);updAvatar(dt);
+  updParticles(dt);updGore(dt);updFX(dt);updAvatar(dt);
   if(S.cut)updCut(dt);
   else if(S.inGame){updPlayer(dt);if(!S.ended||S.free)updScan(dt);}
   else{attractA+=dt*.06;camera.position.set(Math.sin(attractA)*30,8+Math.sin(attractA*1.7)*1.5,Math.cos(attractA)*30);camera.lookAt(0,10,0);}
@@ -894,7 +895,7 @@ function tick(dt,rt){
   lockMat=new T.MeshBasicMaterial({color:0x39f0ff,transparent:true,opacity:.85,blending:T.AdditiveBlending,depthWrite:false,toneMapped:false});
   LOCKFX=new T.Group();scene.add(LOCKFX);LOCKFX.visible=false;
   {const a=new T.Mesh(new T.TorusGeometry(.8,.03,6,48),lockMat);a.rotation.x=Math.PI/2;LOCKFX.add(a);const b=new T.Mesh(new T.TorusGeometry(.95,.012,6,48),lockMat);b.rotation.x=Math.PI/2;LOCKFX.add(b);const c=new T.Mesh(new T.CylinderGeometry(.015,.015,3.4,6),lockMat);c.position.y=1.7;LOCKFX.add(c);}
-  PARTNER.av=makeAvatar(424242);
+  PARTNER.av=makeAvatar(424242);initScreenGore();$('#goreTog').checked=GORE.on;
   spawnPopulation();setModeCss('locked');
   $('#loading').remove();
   requestAnimationFrame(frame);

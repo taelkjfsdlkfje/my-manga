@@ -50,7 +50,7 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
 #glitch i:nth-child(4){animation-duration:.17s;height:1vh;top:80%}
 @keyframes gl{0%{transform:translate(-8%,0);top:10%}33%{transform:translate(6%,0);top:44%}66%{transform:translate(-3%,0);top:72%}100%{transform:translate(9%,0);top:20%}}
 
-#hud{position:absolute;inset:0;pointer-events:none}
+#hud{position:absolute;inset:0;pointer-events:none;z-index:4}
 .panel{background:var(--glass);border:1px solid var(--line);padding:12px 14px;
   clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
 .eyebrow{font:600 11px/1.2 var(--f-hud);letter-spacing:.22em;text-transform:uppercase;color:var(--volt);display:flex;gap:8px;align-items:center;flex-wrap:wrap}

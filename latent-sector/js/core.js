@@ -122,6 +122,8 @@ const SFX={
   stomp:()=>{tone({f:60,f2:30,dur:.3,vol:.35});noise({type:'lowpass',f:300,dur:.2,vol:.25});},
   whoosh:()=>noise({type:'bandpass',f:400,f2:2400,dur:1.4,vol:.25,q:.8}),
   join:()=>{[392,523,659].forEach((f,i)=>tone({type:'triangle',f,dur:.25,vol:.07,delay:i*.09}));},
+  gore:()=>{noise({type:'lowpass',f:900,f2:120,dur:.9,vol:.75});noise({type:'bandpass',f:420,f2:180,dur:.5,vol:.6,q:1.5});tone({f:70,f2:30,dur:.6,vol:.5});for(let i=0;i<10;i++)noise({type:'bandpass',f:MR(600,1600),dur:.05,vol:.12,q:4,delay:.35+i*MR(.05,.12)});},
+  swell:()=>{tone({type:'sawtooth',f:60,f2:140,dur:.7,vol:.08});noise({type:'lowpass',f:200,f2:700,dur:.7,vol:.25});for(let i=0;i<5;i++)noise({type:'bandpass',f:MR(300,700),dur:.08,vol:.18,q:3,delay:i*.13});},
   glitch:()=>{for(let i=0;i<6;i++)tone({type:'square',f:MR(200,2400),dur:.05,vol:.05,delay:i*.06});noise({type:'bandpass',f:1200,dur:.4,vol:.2,q:6});}
 };
 

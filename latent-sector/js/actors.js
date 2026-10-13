@@ -156,6 +156,7 @@ function createEntity(spec){
   e.tx=spec.x;e.ty=spec.y||0;e.tz=spec.z;e.tyaw=spec.yaw||0;
   if(e.state==='gone'){e.g.visible=false;e.goneDone=true;}
   if(e.state==='down'){e.g.rotation.x=-Math.PI/2;e.g.position.y=.15;}
+  if(spec.role==='victim')goreVictim(e);
   ENT.set(e.id,e);NPCS.push(e);return e;
 }
 function removeAllEntities(){for(const e of NPCS){scene.remove(e.g);if(e.tagEl)e.tagEl.remove();}ENT.clear();NPCS.length=0;}
@@ -167,10 +168,11 @@ function onEntState(e,prev,next){
   if(next==='down'){burst(chestOf(e).setY(.6),40,[0x39f0ff,0xffffff,0x66aaff],3,1,.7,.5);SFX.thud();}
   if(next==='dying'){e.dieT=0;}
   if(next==='gone'&&!e.goneDone){e.goneDone=true;
-    if(e.kind==='human'&&prev!=='leave'){const c=chestOf(e);c.y=1.3;burst(c,150,[0xff2d55,0xff7a3a,0x7a0a2a,0xffd0a0],6.5,2.5,1.3,.7);burst(c,40,[0xffffff,0xff9ab0],2,4,.6,-.3);
+    if(e.kind==='human'&&prev!=='leave'&&GORE.on){goreBurst(e);}
+    else if(e.kind==='human'&&prev!=='leave'){const c=chestOf(e);c.y=1.3;burst(c,150,[0xff2d55,0xff7a3a,0x7a0a2a,0xffd0a0],6.5,2.5,1.3,.7);burst(c,40,[0xffffff,0xff9ab0],2,4,.6,-.3);
       const sc=new T.Mesh(new T.CircleGeometry(1.1,24),new T.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.55,depthWrite:false}));sc.rotation.x=-Math.PI/2;sc.position.set(e.g.position.x,.16,e.g.position.z);scene.add(sc);
       const em=new T.Mesh(new T.RingGeometry(1.0,1.15,32),new T.MeshBasicMaterial({color:0xff4020,transparent:true,opacity:.6,blending:T.AdditiveBlending,depthWrite:false,toneMapped:false}));em.rotation.x=-Math.PI/2;em.position.set(e.g.position.x,.17,e.g.position.z);scene.add(em);}
-    if(e.kind!=='human'){burst(e.kind==='mech'?chestOf(e):e.g.position,e.kind==='mech'?220:90,[0xb18cff,0xffffff,0x6040c0],e.kind==='mech'?7:4,1,1.1,.3);}
+    if(e.kind!=='human'){goreOil(e);burst(e.kind==='mech'?chestOf(e):e.g.position,e.kind==='mech'?220:90,[0xb18cff,0xffffff,0x6040c0],e.kind==='mech'?7:4,1,1.1,.3);}
     e.g.visible=false;if(e.tagEl)e.tagEl.style.display='none';}
 }
 function setEntState(e,next){const prev=e.state;if(prev===next)return;e.state=next;onEntState(e,prev,next);}
@@ -183,7 +185,7 @@ function animHuman(e,dt){
   if(e.state==='down'){e.g.rotation.x=lerp(e.g.rotation.x,-Math.PI/2,1-Math.exp(-7*dt));e.g.position.y=lerp(e.g.position.y,.15,1-Math.exp(-7*dt));
     if(e.role!=='victim'&&Math.random()<dt*5)emit(e.g.position.x+MR(-.4,.4),.4,e.g.position.z+MR(-.4,.4),0,MR(.5,1.5),0,0x39f0ff,.4,0);
     if(e.role==='victim'&&Math.random()<dt*2)emit(e.g.position.x,.3,e.g.position.z,MR(-.2,.2),1.5,MR(-.2,.2),0x2bff9a,.8,-.1);return;}
-  if(e.state==='dying'){e.dieT+=dt;const s=1+e.dieT*1.2;e.g.scale.set(s,s,s);return;}
+  if(e.state==='dying'){if(GORE.on){goreSwell(e,dt);return;}e.dieT+=dt;const s=1+e.dieT*1.2;e.g.scale.set(s,s,s);return;}
   if(e.state==='leave'){e.g.scale.set(1,Math.max(.01,e.sc),1);if(e.sc<.98&&Math.random()<dt*30)emit(e.g.position.x+MR(-.3,.3),MR(.2,1.9),e.g.position.z+MR(-.3,.3),MR(-.3,.3),MR(.3,1),MR(-.3,.3),0xe8e8ff,1,-.05);}
   if(e.animSp>.25){e.phase+=e.animSp*dt*2.6;const a=Math.sin(e.phase)*Math.min(.6,e.animSp*.18);e.legL.rotation.x=a;e.legR.rotation.x=-a;e.armL.rotation.x=-a*.8;if(!e.umb)e.armR.rotation.x=a*.8;}
   else{e.legL.rotation.x=lerp(e.legL.rotation.x,0,k);e.legR.rotation.x=lerp(e.legR.rotation.x,0,k);
