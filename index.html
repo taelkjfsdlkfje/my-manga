@@ -1,13 +1,5 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Moonsinger">
-<style>[hidden]{display:none!important}</style>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Moonsinger"><title>Moonsinger</title><style>[hidden]{display:none!important}</style></head><body>
 <title>The Moonsinger's Bell</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -48,6 +40,11 @@ body.touch #touch{display:block} body.touch #hint{display:none}
 #tbDash{width:clamp(52px,14vh,74px);height:clamp(52px,14vh,74px);right:calc(4.5% + env(safe-area-inset-right,0px));bottom:calc(9% + clamp(70px,20vh,104px) + 12px + env(safe-area-inset-bottom,0px))}
 #tbGuard{width:clamp(52px,14vh,74px);height:clamp(52px,14vh,74px);right:calc(4% + clamp(70px,20vh,104px) + 4px + env(safe-area-inset-right,0px));bottom:calc(9% + clamp(70px,20vh,104px) - 6px + env(safe-area-inset-bottom,0px))}
 #tbTalk{right:calc(4% + clamp(70px,20vh,104px)*1.9 + 14px + env(safe-area-inset-right,0px));bottom:calc(52% + env(safe-area-inset-bottom,0px));width:auto;height:auto;border-radius:24px;padding:8px 16px;font:700 15px var(--body);gap:6px;border-color:var(--gold)}
+#unstuck{position:absolute;z-index:4;top:calc(10px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));height:34px;padding:0 14px;border-radius:17px;
+  border:1.5px solid var(--btnline);background:rgba(14,15,30,.7);color:var(--parchment);font:700 14px var(--body);cursor:pointer;touch-action:none;letter-spacing:.02em}
+#unstuck:hover{background:rgba(40,36,70,.85)} #unstuck:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+#unstuck.armed{background:rgba(160,40,50,.9);border-color:#ffb0b8;color:#fff}
+body.touch #unstuck{top:calc(58px + env(safe-area-inset-top,0px));height:36px}
 #tbPause{top:calc(10px + env(safe-area-inset-top,0px));width:40px;height:40px;font:700 14px var(--body);right:calc(10px + env(safe-area-inset-right,0px))}
 #tbFull{top:calc(10px + env(safe-area-inset-top,0px));right:calc(58px + env(safe-area-inset-right,0px));height:40px;width:auto;border-radius:20px;padding:0 14px 0 10px;gap:6px;font:700 14px var(--body);border-color:var(--gold)}
 #tbFull svg{width:20px;height:20px}
@@ -79,6 +76,7 @@ body.pseudofs #hint,body.isfull #hint{display:none}
   <canvas id="gl"></canvas>
   <canvas id="ui" tabindex="0" aria-label="The Moonsinger's Bell game screen"></canvas>
   <div id="err" hidden></div>
+  <button id="unstuck" type="button" aria-label="Unstuck: restart this area or boss phase" hidden>Unstuck</button>
   <div id="touch" data-mode="menu">
     <div id="stickZone"></div><div id="stickGhost"></div><div id="stickBase" hidden><div id="stickKnob"></div></div>
     <button class="tb act" id="tbAttack" data-k="attack" aria-label="Attack, hold to charge Getsuga Tenshou"><svg viewBox="0 0 24 24"><path d="M14.5 3.5 20.5 3.5 20.5 9.5 9 21 3 15z"/><path d="M5 13l6 6M3 21l3-3"/></svg></button>
@@ -1520,7 +1518,7 @@ function makeDrill(){ const g=new THREE.Group(), body=new THREE.Group(); g.add(b
   const cap=new THREE.Mesh(new THREE.CylinderGeometry(1.16,1.0,.45,32),new THREE.MeshBasicMaterial({color:0x140608,fog:false})); cap.position.y=.1; body.add(cap);
   const rim=new THREE.Mesh(new THREE.TorusGeometry(1.14,.08,8,40),new THREE.MeshBasicMaterial({color:0xff3a2a,fog:false})); rim.rotation.x=Math.PI/2; rim.position.y=-.1; body.add(rim);
   const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xff2a1a,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,opacity:.35})); gl.scale.set(4,5.5,1); gl.position.y=-1.8; g.add(gl);
-  scene.add(g); const L1=fxLights[1]; L1.color.setHex(0xff3a1a); L1.distance=16;
+  g.userData.temp=1; scene.add(g); const L1=fxLights[1]; L1.color.setHex(0xff3a1a); L1.distance=16;
   const d={g,body,cone,tx,x:0,y:0,z:0,s:.1,spin:8,dir:new THREE.Vector3(0,-1,0),fire:1};
   const tmpQ=new THREE.Quaternion(), down=new THREE.Vector3(0,-1,0);
   Game.fxUpd.push(dt=>{ g.position.set(d.x,d.y,d.z); g.scale.setScalar(d.s); tmpQ.setFromUnitVectors(down,d.dir.clone().normalize()); g.quaternion.slerp(tmpQ,.25);
@@ -1561,8 +1559,8 @@ function* specialAttack(){ const P=Player, B=Game.boss; P.sp=0; P.inv=99; P.atk=
   Game.chant.fin=1; yield wait(.25); Game.chant=null; hz.on=0;
   if(tgt&&tgt.hp>0){ tx=tgt.x; tz=tgt.z; } const ty=groundY(tx,tz);
   // the sky opens: a blanket of light pours down on the target
-  const col=new THREE.Mesh(new THREE.CylinderGeometry(1.6,3.2,40,32,1,true),new THREE.MeshBasicMaterial({color:0xffe8c8,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false})); col.position.set(tx,ty+20,tz); scene.add(col);
-  const ring=new THREE.Mesh(new THREE.RingGeometry(2.9,3.2,48),new THREE.MeshBasicMaterial({color:0xff4a2a,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide})); ring.rotation.x=-Math.PI/2; ring.position.set(tx,ty+.06,tz); scene.add(ring);
+  const col=new THREE.Mesh(new THREE.CylinderGeometry(1.6,3.2,40,32,1,true),new THREE.MeshBasicMaterial({color:0xffe8c8,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false})); col.position.set(tx,ty+20,tz); col.userData.temp=1; scene.add(col);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(2.9,3.2,48),new THREE.MeshBasicMaterial({color:0xff4a2a,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide})); ring.rotation.x=-Math.PI/2; ring.position.set(tx,ty+.06,tz); ring.userData.temp=1; scene.add(ring);
   const lf={o:0}; Game.fxUpd.push(()=>{ col.material.opacity=lf.o*(.07+.04*Math.sin(performance.now()/70)); ring.material.opacity=lf.o*.75; ring.rotation.z+=.04; if(lf.o>.3&&Math.random()<.7) FX.spawn(tx+rnd(-2.6,2.6),ty+rnd(4,14),tz+rnd(-2.6,2.6),0,-rnd(6,12),0,.6,0xfff0d0,.22,0,true); return !lf.dead; });
   Sound.sfx('skyopen'); Game.skyLight=1; yield tween(lf,{o:1},.45);
   // drill climbs, aims, and launches
@@ -2364,6 +2362,19 @@ function drawUI(){ D.setTransform(RW/UW,0,0,RH/UH,0,0); D.clearRect(0,0,UW,UH);
 const IS_TOUCH=()=>document.body.classList.contains('touch');
 if(matchMedia('(pointer:coarse)').matches){ renderer.setSize(960,540,false); composer.setSize(960,540); sun.shadow.mapSize.set(1024,1024); }
 // ---------- flow ----------
+function unstuck(){ const st=Game.state; if(st==='title'||st==='end') return; const P=Player, B=Game.boss;
+  Voice.stop(); endClash(); releaseTouchKeys(); for(const k in held) held[k]=false; clearHits();
+  Object.assign(Game,{script:null,wait:null,dlg:null,timeScale:1,slowT:0,letterTo:0,letter:0,evaCard:null,caption:null,chant:null,impSeq:null,skyLight:0,card:null,banner:null,subtitle:null,pigDrip:0,eclipse:0,darken:0,petals:0});
+  Game.fxUpd=[]; scene.children.filter(o=>o.userData&&o.userData.temp).forEach(o=>scene.remove(o)); BEAMS.forEach(b=>scene.remove(b.g)); BEAMS=[]; Cam.cine=null; Cam.focus=null; Cam.zoom=1; fxLights.forEach(l=>l.intensity=0); grade.uniforms.red.value=0; grade.uniforms.flash.value=0; grade.uniforms.imp.value=0; FX.flash=0; FX.shake=0; FX.hitstop=0;
+  Object.assign(P,{cineFly:false,cineAnim:null,hidden:false,scripted:null,atk:null,charge:0,beamPose:0,dash:0,hurt:0,vx:0,vy:0,vz:0});
+  const H=Game.hamza; if(H){ H.mode='follow'; H.pee=null; H.gs=1; H.front=0; H.mouth=0; }
+  const k=L.key;
+  if(st==='dead'||(B&&['keep','lake','flowers'].includes(k))){ if(B){ B.state='idle'; } respawn(); Game.banner={name:'Unstuck',sub:B?'Restarting this phase':'Back on your feet',t:0,small:1}; return; }
+  if(['keep','lake','flowers','space'].includes(k)){ Game.state='end'; Game.endT=0; return; } // the fight is already won
+  const aff=Game.aff, fl=Game.flags; fl.ambush=0;
+  const keepMira=!!fl.metMira&&k!=='village';
+  loadLevel(k,{mira:keepMira,keepHP:1}); if(k==='village'&&fl.metMira&&Game.mira){ Object.assign(Game.mira,{x:Player.x-1,z:Player.z,y:Player.y,follow:true}); Game.trail=[]; } Game.aff=aff; Game.flags=fl; if(k==='village'&&fl.elderAngry&&!fl.elderDead){ NPCS.filter(n=>n.who==='elder').forEach(n=>{ n.spr.dispose(); NPCS.splice(NPCS.indexOf(n),1); }); spawnElderMob(7,13.6); }
+  Player.hp=Player.maxHp; Game.state='play'; Game.fade=1; Game.fadeTo=0; snapCam(); Game.banner={name:'Unstuck',sub:'Back to the start of '+(L.name||'this area'),t:0,small:1}; }
 function respawn(){ const P=Player; endClash(); BEAMS.forEach(b=>scene.remove(b.g)); BEAMS=[]; DOGS.forEach(d=>d.spr&&d.spr.dispose()); DOGS=[];
   if(Game.boss){ const ph=Game.bossPhaseStart, aff=Game.aff, fl=Game.flags;
     if(ph===1){ loadLevel('keep',{keepHP:0}); Game.aff=aff; Game.flags=fl; setupKeep(); beginPhase(1); }
@@ -2414,7 +2425,14 @@ function fit(){ const wrapEl=document.getElementById('wrap'), hint=document.getE
   const aw=full?vw:document.body.clientWidth-32, ah=full?vh:document.body.clientHeight-(getComputedStyle(hint).display==='none'?16:hint.offsetHeight+24);
   let w=Math.max(200,Math.min(aw,ah*16/9)); wrapEl.style.width=Math.floor(w)+'px'; wrapEl.style.height=Math.floor(w*9/16)+'px'; }
 addEventListener('resize',fit); fit();
-Game.gibs=[]; CROSS=crossTex(); toTitle(); ui.focus(); requestAnimationFrame(loop);
+Game.gibs=[]; CROSS=crossTex(); (function(){ const b=document.getElementById('unstuck'); let armT=0;
+  const disarm=()=>{ b.classList.remove('armed'); b.textContent='Unstuck'; armT=0; };
+  b.addEventListener('pointerdown',e=>e.stopPropagation());
+  b.addEventListener('click',e=>{ e.stopPropagation(); Sound.unlock(); if(Game.state==='title'||Game.state==='end') return;
+    if(!armT){ armT=setTimeout(disarm,3000); b.classList.add('armed'); b.textContent='Tap again to restart'; Sound.sfx('blip'); return; }
+    clearTimeout(armT); disarm(); Sound.sfx('select'); unstuck(); ui.focus(); });
+  setInterval(()=>{ b.hidden=Game.state==='title'||Game.state==='end'; },250); })();
+toTitle(); ui.focus(); requestAnimationFrame(loop);
 </script>
 
-</html>
+</body></html>
