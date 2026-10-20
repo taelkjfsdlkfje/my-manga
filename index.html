@@ -1566,6 +1566,44 @@ function makeDrill(){ const g=new THREE.Group(), body=new THREE.Group(); g.add(b
         for(let j=0;j<4;j++){ const v=j/4; FX.spawn(lerp(ax,bx,v),lerp(ay,by,v),lerp(az,bz,v),0,0,0,.07,j%2?0xffffff:0xff3a4a,.16,0,true); } ax=bx; ay=by; az=bz; } }
     return !d.dead; }); return d; }
 // impact frames: sequence of [mode, frames]; 1 = black on white, 2 = white on black, 3 = red on black
+function* drillSplit(d,foes,gy){ const P=Player, add={transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false};
+  // a pillar of light opens over every target
+  const cols=foes.map(m=>{ const ty=groundY(m.x,m.z), c=new THREE.Mesh(new THREE.CylinderGeometry(.8,1.5,40,20,1,true),new THREE.MeshBasicMaterial(Object.assign({color:0xffe8c8},add)));
+    const r=new THREE.Mesh(new THREE.RingGeometry(1.3,1.5,40),new THREE.MeshBasicMaterial(Object.assign({color:0xff4a2a},add))); r.rotation.x=-Math.PI/2; c.userData.temp=r.userData.temp=1; scene.add(c); scene.add(r);
+    return {c,r,m,x:m.x,z:m.z,ty}; });
+  const lf={o:0}; Game.fxUpd.push(()=>{ for(const o of cols){ if(o.m.hp>0&&!o.lock){ o.x=o.m.x; o.z=o.m.z; o.ty=groundY(o.x,o.z); } o.c.position.set(o.x,o.ty+20,o.z); o.r.position.set(o.x,o.ty+.06,o.z);
+      o.c.material.opacity=lf.o*(.08+.04*Math.sin(performance.now()/70)); o.r.material.opacity=lf.o*.8; o.r.rotation.z+=.05; if(lf.o>.3&&Math.random()<.25) FX.spawn(o.x+rnd(-1.2,1.2),o.ty+rnd(4,12),o.z+rnd(-1.2,1.2),0,-rnd(6,12),0,.6,0xfff0d0,.2,0,true); }
+    return !lf.dead; });
+  Sound.sfx('skyopen'); Game.skyLight=1; yield tween(lf,{o:1},.4);
+  yield tween(d,{y:gy+7.4},.3,t=>1-Math.pow(1-t,2)); d.spin=75; d.fire=2.6; yield wait(.22);
+  // shatter
+  const ox=d.x, oy=d.y-1, oz=d.z; impactFrame([[2,2],[3,2],[1,1]]); shake(.7); FX.hitstop=.08; Sound.sfx('crossboom'); Sound.sfx('tear');
+  FX.burst(ox,oy,oz,90,0xff3a1a,10,.4); FX.burst(ox,oy,oz,50,0xffd060,12,.3); FX.burst(ox,oy,oz,40,0x1a0a0c,7,.45,false); for(let i=0;i<3;i++) FX.ring(ox,oy,oz,i?'#ff3a2a':'#ffd0a0',2+i*1.4,.35);
+  d.fire=0; d.dead=1; scene.remove(d.g);
+  const n=Math.max(7,foes.length), minis=[];
+  for(let i=0;i<n;i++){ const tg=foes[i%foes.length], extra=i>=foes.length, md=makeDrill(), a=i/n*6.283+rnd(-.2,.2);
+    md.x=ox; md.y=oy; md.z=oz; md.s=.05; md.spin=60; md.fire=.55; md.gold=d.gold;
+    minis.push({md,tg,extra,fx:ox+Math.cos(a)*rnd(2.2,3.2),fy:oy+rnd(.4,2),fz:oz+Math.sin(a)*rnd(1.4,2.2),dx:extra?rnd(-2.2,2.2):0,dz:extra?rnd(-2.2,2.2):0,t:0}); }
+  const fan={u:0}; Game.fxUpd.push(()=>{ if(fan.done) return false; for(const q of minis){ const u=fan.u; q.md.x=lerp(ox,q.fx,u); q.md.y=lerp(oy,q.fy,u); q.md.z=lerp(oz,q.fz,u); q.md.s=lerp(.05,.34,u);
+      q.md.dir.set(q.tg.x+q.dx-q.md.x,(q.tg.y+.4)-q.md.y,q.tg.z+q.dz-q.md.z); } return true; });
+  yield tween(fan,{u:1},.38,t=>1-Math.pow(1-t,3)); fan.done=1; yield wait(.15);
+  minis.forEach((q,i)=>{ q.t=-i*.07; q.sx=q.md.x; q.sy=q.md.y; q.sz=q.md.z; }); let left=minis.length, lastBoom=0; Sound.sfx('beam');
+  const fly={done:0}; Game.fxUpd.push(dt=>{ if(fly.done) return false;
+    for(const q of minis){ if(q.hit) continue; q.t+=dt; if(q.t<0) continue;
+      if(!q.locked){ q.locked=1; q.lx=q.tg.x+q.dx; q.lz=q.tg.z+q.dz; q.ly=groundY(q.lx,q.lz)+.4; const o=cols.find(c=>c.m===q.tg); if(o&&!q.extra) o.lock=1; if(Math.random()<.5) Sound.sfx('swing'); }
+      if(!q.extra&&q.tg.hp>0){ q.lx=q.tg.x; q.lz=q.tg.z; }
+      const u=Math.min(1,q.t/.3), e=u*u; q.md.x=lerp(q.sx,q.lx,e); q.md.y=lerp(q.sy,q.ly,e)+Math.sin(u*Math.PI)*.6; q.md.z=lerp(q.sz,q.lz,e); q.md.dir.set(q.lx-q.sx,q.ly-q.sy,q.lz-q.sz); q.md.fire=1.4;
+      if(u>=1){ q.hit=1; left--; const x=q.lx, z=q.lz, y=q.ly-.4;
+        FX.ring(x,y,z,'#ff3a2a',2.2,.35); FX.ring(x,y,z,'#ffd0a0',1.4,.3); FX.burst(x,y+.5,z,40,0xff4a10,7,.35); FX.burst(x,y+.5,z,20,0x1a0a0c,5,.4,false); FX.burst(x,y+.5,z,14,0xffd060,8,.25);
+        shake(.35); if(performance.now()-lastBoom>90){ lastBoom=performance.now(); Sound.sfx('slam'); }
+        if(!q.extra&&q.tg.hp>0){ damageMob(q.tg,10,Math.atan2(q.tg.z-P.z,q.tg.x-P.x)); Sound.sfx('gore'); }
+        if(left===minis.length-1) impactFrame([[1,1],[2,1]]); else if(left===0){ impactFrame([[2,2],[3,2],[1,1]]); shake(.8); }
+        if(L.destr) for(const pr of L.destr) if(!pr.dead&&propDist(pr,x,z)<1.8) hitProp(pr,6,clamp(x,pr.x0,pr.x1),clamp(z,pr.z0,pr.z1));
+        q.md.fire=0; q.md.dead=1; scene.remove(q.md.g); } }
+    return true; });
+  let w=0; while(left>0&&w<4){ yield wait(.05); w+=.05; } fly.done=1; minis.forEach(q=>{ if(!q.hit){ q.md.dead=1; scene.remove(q.md.g); } });
+  fxLights[1].intensity=0; yield wait(.35);
+  yield tween(lf,{o:0},.4); lf.dead=1; cols.forEach(o=>{ scene.remove(o.c); scene.remove(o.r); }); Game.skyLight=0; }
 function impactFrame(seq){ Game.impSeq=(seq||[[1,2],[2,2]]).map(x=>x.slice()); }
 function* specialAttack(){ const P=Player, B=Game.boss; P.sp=0; P.inv=99; P.atk=null; P.charge=0; P.vx=P.vz=0;
   const tgt=nearestFoe(24); let tx=tgt?tgt.x:P.x+Math.cos(P.ang)*6, tz=tgt?tgt.z:P.z+Math.sin(P.ang)*6; P.f=tx>=P.x?1:-1;
@@ -1588,6 +1626,10 @@ function* specialAttack(){ const P=Player, B=Game.boss; P.sp=0; P.inv=99; P.atk=
     yield tween(d,{s:.1+(i+1)*.24,y:gy+5.2+(i+1)*.35},T*lens[i]/tot,t=>t); }
   let w=0; while(Voice.speaking&&w<1.2){ yield wait(.1); w+=.1; }
   Game.chant.fin=1; yield wait(.25); Game.chant=null; hz.on=0;
+  // outside the boss fight the drill shatters into a swarm that hits every foe on screen
+  const foes=B?[]:MOBS.filter(m=>m.hp>0&&Math.abs(m.x-P.x)<15&&Math.abs(m.z-P.z)<11);
+  if(foes.length){ yield* drillSplit(d,foes,gy);
+    P.cineFly=false; P.cineAnim=null; P.inv=.8; P.vy=-2; hz.dead=1; if(H&&H.mode==='cine') H.mode='follow'; return; }
   if(tgt&&tgt.hp>0){ tx=tgt.x; tz=tgt.z; } const ty=groundY(tx,tz);
   // the sky opens: a blanket of light pours down on the target
   const col=new THREE.Mesh(new THREE.CylinderGeometry(1.6,3.2,40,32,1,true),new THREE.MeshBasicMaterial({color:0xffe8c8,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false})); col.position.set(tx,ty+20,tz); col.userData.temp=1; scene.add(col);
