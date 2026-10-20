@@ -1657,7 +1657,7 @@ function updateProps(dt){ if(L.destr) for(const p of L.destr){
   Game.debris=Game.debris.filter(g=>{ if(g.life<=0){ scene.remove(g.m); g.m.geometry.dispose(); return false; } return true; }); }
 
 // ================= GRIMMAW =================
-const PHASE_HP=96;
+const PHASE_HP=67;
 function makeBoss(x,z){ return {x,z,y:groundY(x,z),vx:0,vy:0,vz:0,r:.9,hp:PHASE_HP,maxHp:PHASE_HP,phase:1,state:'intro',st:0,t:0,f:-1,ang:Math.PI/2,flash:0,anim:'idle',inv:true,cd:.6,
   spr:new Sprite3D(128,128,28),waves:[],orbs:[],fans:[],onGround:true,chain:0}; }
 function bossSprite(b){ if(!b.spr||SPRITES.indexOf(b.spr)<0) b.spr=new Sprite3D(128,128,28); }
