@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <style>[hidden]{display:none!important}</style>
 <title>The Moonsinger's Bell</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -28,14 +30,30 @@ body{background:var(--ink);color:var(--parchment);margin:0;font-family:var(--bod
 #hint{font-size:13px;color:var(--dusk);letter-spacing:.02em;text-align:center;max-width:100%;line-height:1.5}
 #hint b{color:var(--gold);font-weight:700}
 #err{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--parchment);font-size:18px;line-height:1.5}
-#touch{position:absolute;inset:0;pointer-events:none}
-#stick{position:absolute;left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:120px;height:120px;border-radius:50%;
-  border:1.5px solid var(--btnline);background:var(--btn);pointer-events:auto;touch-action:none}
-#knob{position:absolute;left:38px;top:38px;width:44px;height:44px;border-radius:50%;background:rgba(216,180,106,.45)}
-#touch .right{position:absolute;right:calc(10px + env(safe-area-inset-right,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;width:180px;pointer-events:none}
-#touch button{pointer-events:auto;width:56px;height:56px;border-radius:50%;border:1.5px solid var(--btnline);background:var(--btn);color:var(--parchment);font:700 13px var(--body);touch-action:none}
-#touch button:active,#touch button.on{background:rgba(216,180,106,.35)}
-@media (pointer:fine){#touch{display:none}}
+#touch{position:absolute;inset:0;pointer-events:none;display:none}
+body.touch #touch{display:block} body.touch #hint{display:none}
+#stickZone{position:absolute;left:0;top:14%;width:46%;bottom:0;pointer-events:auto;touch-action:none}
+#stickBase{position:absolute;width:clamp(96px,26vh,140px);aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;
+  background:radial-gradient(circle,rgba(20,22,40,.25),rgba(20,22,40,.5));border:2px solid rgba(233,226,207,.35)}
+#stickKnob{position:absolute;left:50%;top:50%;width:44%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);background:rgba(233,226,207,.55);box-shadow:0 0 12px rgba(216,180,106,.5)}
+#stickGhost{position:absolute;left:calc(9% + env(safe-area-inset-left,0px));bottom:12%;width:clamp(84px,22vh,120px);aspect-ratio:1;border-radius:50%;border:2px dashed rgba(233,226,207,.22);pointer-events:none}
+.tb{position:absolute;pointer-events:auto;touch-action:none;border-radius:50%;border:2px solid rgba(233,226,207,.45);background:radial-gradient(circle at 35% 30%,rgba(60,62,96,.6),rgba(14,15,30,.62));
+  color:var(--parchment);display:flex;align-items:center;justify-content:center;padding:0;-webkit-tap-highlight-color:transparent}
+.tb svg{width:52%;height:52%;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.tb.on{background:radial-gradient(circle,rgba(216,180,106,.65),rgba(120,90,40,.5));border-color:var(--gold);transform:scale(.94)}
+#tbAttack{width:clamp(70px,20vh,104px);height:clamp(70px,20vh,104px);right:calc(4% + env(safe-area-inset-right,0px));bottom:calc(9% + env(safe-area-inset-bottom,0px));border-color:rgba(255,120,140,.6)}
+#tbJump{width:clamp(52px,14vh,74px);height:clamp(52px,14vh,74px);right:calc(4% + clamp(70px,20vh,104px) + 14px + env(safe-area-inset-right,0px));bottom:calc(5% + env(safe-area-inset-bottom,0px))}
+#tbDash{width:clamp(52px,14vh,74px);height:clamp(52px,14vh,74px);right:calc(4.5% + env(safe-area-inset-right,0px));bottom:calc(9% + clamp(70px,20vh,104px) + 12px + env(safe-area-inset-bottom,0px))}
+#tbGuard{width:clamp(52px,14vh,74px);height:clamp(52px,14vh,74px);right:calc(4% + clamp(70px,20vh,104px) + 4px + env(safe-area-inset-right,0px));bottom:calc(9% + clamp(70px,20vh,104px) - 6px + env(safe-area-inset-bottom,0px))}
+#tbTalk{right:calc(4% + clamp(70px,20vh,104px)*1.9 + 14px + env(safe-area-inset-right,0px));bottom:calc(28% + env(safe-area-inset-bottom,0px));width:auto;height:auto;border-radius:24px;padding:8px 16px;font:700 15px var(--body);gap:6px;border-color:var(--gold)}
+#tbPause,#tbFull{top:calc(10px + env(safe-area-inset-top,0px));width:40px;height:40px;font:700 14px var(--body)}
+#tbPause{right:calc(10px + env(safe-area-inset-right,0px))} #tbFull{right:calc(58px + env(safe-area-inset-right,0px))}
+#touch[data-mode="menu"] .act,#touch[data-mode="menu"] #stickZone,#touch[data-mode="menu"] #stickGhost{display:none}
+#touch[data-mode="clash"] .act:not(#tbAttack),#touch[data-mode="clash"] #stickGhost{display:none}
+#touch:not([data-talk="1"]) #tbTalk{display:none}
+#rotate{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:var(--ink);color:var(--parchment);z-index:20;text-align:center;padding:24px;font-size:18px}
+#rotate b{font-family:var(--display);color:var(--gold);font-size:22px}
+@media (orientation:portrait){ body.touch:not(.portraitok) #rotate{display:flex} }
 @media (pointer:coarse){#hint{display:none}}
 </style>
 
@@ -43,17 +61,18 @@ body{background:var(--ink);color:var(--parchment);margin:0;font-family:var(--bod
   <canvas id="gl"></canvas>
   <canvas id="ui" tabindex="0" aria-label="The Moonsinger's Bell game screen"></canvas>
   <div id="err" hidden></div>
-  <div id="touch">
-    <div id="stick"><div id="knob"></div></div>
-    <div class="right">
-      <button data-k="confirm" aria-label="Talk">Talk</button>
-      <button data-k="dash" aria-label="Dash">Dash</button>
-      <button data-k="block" aria-label="Block or parry">Guard</button>
-      <button data-k="attack" aria-label="Attack, hold to charge">Atk</button>
-      <button data-k="jump" aria-label="Jump">Jump</button>
-    </div>
+  <div id="touch" data-mode="menu">
+    <div id="stickZone"></div><div id="stickGhost"></div><div id="stickBase" hidden><div id="stickKnob"></div></div>
+    <button class="tb act" id="tbAttack" data-k="attack" aria-label="Attack, hold to charge Crescent Fang"><svg viewBox="0 0 24 24"><path d="M14.5 3.5 20.5 3.5 20.5 9.5 9 21 3 15z"/><path d="M5 13l6 6M3 21l3-3"/></svg></button>
+    <button class="tb act" id="tbJump" data-k="jump" aria-label="Jump, hold to glide"><svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+    <button class="tb act" id="tbDash" data-k="dash" aria-label="Dash"><svg viewBox="0 0 24 24"><path d="M4 12h10M10 6l6 6-6 6M18 6v12"/></svg></button>
+    <button class="tb act" id="tbGuard" data-k="block" aria-label="Guard, tap as a hit lands to parry"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg></button>
+    <button class="tb act" id="tbTalk" data-k="confirm" aria-label="Talk">Talk</button>
+    <button class="tb" id="tbFull" aria-label="Full screen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    <button class="tb" id="tbPause" data-k="pause" aria-label="Pause">II</button>
   </div>
 </div>
+<div id="rotate"><b>Turn your phone sideways</b>The Moonsinger's Bell plays in landscape.<button class="tb" id="rotOk" style="position:static;width:auto;height:auto;border-radius:20px;padding:8px 18px;font:700 15px var(--body)">Play anyway</button></div>
 <div id="hint"><b>WASD</b> move · <b>Space</b> jump, again to double jump, hold to glide · <b>Left click</b> attack, hold and release for Crescent Fang · <b>Right click</b> block, tap just before a hit to parry · <b>Shift</b> dash · <b>E</b> talk · <b>W/S</b> pick reply · <b>Esc</b> pause · <b>M</b> mute</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
@@ -82,16 +101,21 @@ function release(a){ if(held[a]) relz[a]=true; held[a]=false; }
 addEventListener('keydown',e=>{const a=KEYMAP[e.code]; if(!a) return; e.preventDefault(); if(!e.repeat) press(a); Sound.unlock();});
 addEventListener('keyup',e=>{const a=KEYMAP[e.code]; if(a){e.preventDefault(); release(a);}});
 addEventListener('blur',()=>{for(const k in held) if(held[k]) release(k);});
-document.querySelectorAll('#touch button').forEach(b=>{ const k=b.dataset.k;
-  b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);b.classList.add('on');press(k);Sound.unlock();});
-  const up=()=>{b.classList.remove('on');release(k);}; b.addEventListener('pointerup',up); b.addEventListener('pointercancel',up); });
-(function(){ const st=document.getElementById('stick'), kn=document.getElementById('knob'); let id=null;
-  const mv=e=>{ const r=st.getBoundingClientRect(); let x=(e.clientX-r.left-r.width/2)/(r.width/2), y=(e.clientY-r.top-r.height/2)/(r.height/2); const m=Math.hypot(x,y); if(m>1){x/=m;y/=m;}
-    Stick.x=Math.abs(x)>.15?x:0; Stick.z=Math.abs(y)>.15?y:0; kn.style.transform=`translate(${x*38}px,${y*38}px)`;
-    if(Stick.z<-.5) press('up'); else release('up'); if(Stick.z>.5) press('down'); else release('down'); };
-  st.addEventListener('pointerdown',e=>{ id=e.pointerId; st.setPointerCapture(id); mv(e); Sound.unlock(); });
-  st.addEventListener('pointermove',e=>{ if(e.pointerId===id) mv(e); });
-  const up=()=>{ id=null; Stick.x=Stick.z=0; kn.style.transform=''; release('up'); release('down'); }; st.addEventListener('pointerup',up); st.addEventListener('pointercancel',up); })();
+(function(){ const T=document.getElementById('touch');
+  const markTouch=()=>{ if(!document.body.classList.contains('touch')){ document.body.classList.add('touch'); dispatchEvent(new Event('resize')); } };
+  if(matchMedia('(pointer:coarse)').matches) markTouch(); addEventListener('touchstart',markTouch,{passive:true});
+  document.getElementById('rotOk').addEventListener('click',()=>{ document.body.classList.add('portraitok'); dispatchEvent(new Event('resize')); });
+  T.querySelectorAll('.tb[data-k]').forEach(b=>{ const k=b.dataset.k;
+    b.addEventListener('pointerdown',e=>{ e.preventDefault(); e.stopPropagation(); try{b.setPointerCapture(e.pointerId);}catch(_){} b.classList.add('on'); press(k); Sound.unlock(); if(navigator.vibrate) try{navigator.vibrate(8);}catch(_){} });
+    const up=()=>{ b.classList.remove('on'); release(k); }; b.addEventListener('pointerup',up); b.addEventListener('pointercancel',up); b.addEventListener('lostpointercapture',up); });
+  document.getElementById('tbFull').addEventListener('click',()=>{ const el=document.documentElement; try{ if(document.fullscreenElement) document.exitFullscreen(); else if(el.requestFullscreen) el.requestFullscreen({navigationUI:'hide'}).then(()=>{ try{ screen.orientation.lock('landscape'); }catch(_){} }).catch(()=>{}); }catch(_){} });
+  const zone=document.getElementById('stickZone'), base=document.getElementById('stickBase'), knob=document.getElementById('stickKnob'); let id=null, ox=0, oy=0;
+  zone.addEventListener('pointerdown',e=>{ e.preventDefault(); Sound.unlock(); if(window.onTouchTap&&window.onTouchTap(e)) return; if(id!==null) return; id=e.pointerId; try{zone.setPointerCapture(id);}catch(_){}
+    const r=T.getBoundingClientRect(); ox=e.clientX; oy=e.clientY; base.style.left=(ox-r.left)+'px'; base.style.top=(oy-r.top)+'px'; base.hidden=false; knob.style.transform='translate(-50%,-50%)'; });
+  zone.addEventListener('pointermove',e=>{ if(e.pointerId!==id) return; const R=base.offsetWidth/2||60; let x=(e.clientX-ox)/R, y=(e.clientY-oy)/R; const m=Math.hypot(x,y); if(m>1){x/=m;y/=m;}
+    Stick.x=Math.abs(x)>.12?x:0; Stick.z=Math.abs(y)>.12?y:0; knob.style.transform=`translate(calc(-50% + ${x*R*.62}px),calc(-50% + ${y*R*.62}px))`; });
+  const end=e=>{ if(e.pointerId!==id) return; id=null; Stick.x=Stick.z=0; base.hidden=true; }; zone.addEventListener('pointerup',end); zone.addEventListener('pointercancel',end);
+})();
 function consume(a){ const v=!!hit[a]; hit[a]=false; return v; }
 function released(a){ const v=!!relz[a]; relz[a]=false; return v; }
 function clearHits(){ for(const k in hit) hit[k]=false; for(const k in relz) relz[k]=false; }
@@ -810,7 +834,7 @@ function shake(n){ FX.shake=Math.max(FX.shake,n); }
 PAL.flowers={g:['#1f3a3a','#1a3232','#284848','#305656'],d:['#2a2a3a','#222230','#34344a'],path:['#3a3a4a','#30303e','#46465a'],stone:['#4a4e66','#3e4258','#5a5e78'],flower:['#ffffff','#e8f0ff']};
 PAL.lake=PAL.keep;
 const LEVELDEF={
-  village(){ const G=newGrid(40,24,'village'); G.tx=makeTileTextures('village'); Object.assign(G,{key:'village',look:'village',music:'village',name:'Lanternbrook',sub:'The Village of a Thousand Lanterns',spawn:[4,12.8]});
+  village(){ const G=newGrid(40,24,'village'); G.tx=makeTileTextures('village'); Object.assign(G,{cam:{y:5.4,z:15.5,up:1.3},key:'village',look:'village',music:'village',name:'Lanternbrook',sub:'The Village of a Thousand Lanterns',spawn:[4,12.8]});
     blockB(G,0,0,39,4); blockB(G,0,22,39,23); blockB(G,0,0,0,23); blockB(G,39,0,39,23);
     boxT(G,0,12,39,13,'path'); for(let z=0;z<24;z++) for(let x=0;x<40;x++) if(Math.hypot(x+.5-20,z+.5-12.5)<5.6) G.T[z][x]='cobble';
     boxH(G,33,16,35,18,3,'flag'); boxH(G,31,17,32,17,1,'flag');
@@ -830,12 +854,12 @@ const LEVELDEF={
     G.trig.push({x:37.6,id:'villageExit'});
     // vista
     G.root.add(skyDome(LOOKS.village.sky,LOOKS.village.sunDir,LOOKS.village.sunCol,LOOKS.village.sunSize));
-    farPlane(G,colossusTex(['#5a4a7a','#6a5a8a','#ffd0a0','rgba(255,170,150,.55)']),360,180,60,30,-300,{ro:-8});
+    farPlane(G,colossusTex(['#5a4a7a','#6a5a8a','#ffd0a0','rgba(255,170,150,.55)']),420,210,30,10,-300,{ro:-8});
     farPlane(G,ridgeTex(['#6a5a90','#9a7aa0'],2,3,0),620,150,20,-10,-210,{ro:-7}); farPlane(G,ridgeTex(['#4a3a68','#6a5080'],5,4,0),520,110,20,-14,-140,{ro:-6});
     for(let i=0;i<7;i++) farPlane(G,cloudTex(i,['255,210,200','220,150,170']),110+i*12,40,-140+i*55,30+hash(i,1)*30,-230+i*6,{ro:-6,op:.85});
     G.anim.push(dt=>{ if(Math.random()<.08){ FX.spawn(rnd(-20,60),rnd(-2,6),rnd(-60,-30),rnd(-.2,.2),rnd(.6,1),0,14,0xffb060,1.6,-0.02,true); } });
     return G; },
-  meadow(){ const G=newGrid(64,22,'meadow'); G.tx=makeTileTextures('meadow'); Object.assign(G,{key:'meadow',look:'meadow',music:'field',name:'Starfall Ridge',sub:'Where the moonpetals bloom',spawn:[2.5,10.5],bottom:-14});
+  meadow(){ const G=newGrid(64,22,'meadow'); G.tx=makeTileTextures('meadow'); Object.assign(G,{cam:{y:3.7,z:15.5,up:1.9},key:'meadow',look:'meadow',music:'field',name:'Starfall Ridge',sub:'Where the moonpetals bloom',spawn:[2.5,10.5],bottom:-14});
     const H=x=>x<12?0:x<20?1:x<28?2:x<34?4:x<42?-99:x<50?3:2;
     for(let z=0;z<22;z++) for(let x=0;x<64;x++){ G.H[z][x]=z<=4?-99:z>=17?H(x)+(x>=34&&x<42?-999:.6):H(x); }
     boxH(G,37,9,38,11,3.4,'flag'); blockB(G,0,5,63,5); for(let x=0;x<64;x++) if(G.H[5][x]<-50) G.B[5][x]=false;
@@ -852,12 +876,12 @@ const LEVELDEF={
     G.arena={x0:50.3,x1:62.7,z0:6.2,z1:16.6};
     G.root.add(skyDome(LOOKS.meadow.sky,LOOKS.meadow.sunDir,LOOKS.meadow.sunCol,LOOKS.meadow.sunSize));
     const fields=new THREE.Mesh(new THREE.PlaneGeometry(900,500),new THREE.MeshLambertMaterial({map:fieldsTex()})); fields.material.map.repeat.set(9,5); fields.rotation.x=-Math.PI/2; fields.position.set(32,-46,-200); G.root.add(fields);
-    farPlane(G,colossusTex(['#7a92c0','#8aa2cc','#e8f0ff','rgba(200,220,255,.7)']),440,220,-20,40,-330,{ro:-8});
+    G.colossus=farPlane(G,colossusTex(['#4e6290','#5e72a0','#d8e6ff','rgba(150,180,230,.3)']),540,270,34,-62,-235,{ro:-7});
     farPlane(G,ridgeTex(['#8aa0cc','#b8c8e4'],1,3,1),800,170,20,-6,-260,{ro:-7}); farPlane(G,ridgeTex(['#5f7aa8','#86a0c0'],4,4,0),700,120,30,-24,-170,{ro:-6});
     for(let i=0;i<9;i++) farPlane(G,cloudTex(i+20,['255,255,255','220,232,255']),120+i*10,46,-200+i*60,40+hash(i,4)*30,-250+i*4,{ro:-6,op:.9});
     [[-30,-10,-80,6],[70,-4,-110,9],[110,6,-160,12],[10,0,-130,5]].forEach(([x,y,z,s])=>islandMesh(G,x,y,z,s));
     return G; },
-  ruins(){ const G=newGrid(60,20,'ruins'); G.tx=makeTileTextures('ruins'); Object.assign(G,{key:'ruins',look:'ruins',music:'night',name:'Houndwood Ruins',sub:'The road to Kennel Keep',spawn:[2.5,9.5],bottom:-14});
+  ruins(){ const G=newGrid(60,20,'ruins'); G.tx=makeTileTextures('ruins'); Object.assign(G,{cam:{y:5.6,z:15.5,up:1.1},key:'ruins',look:'ruins',music:'night',name:'Houndwood Ruins',sub:'The road to Kennel Keep',spawn:[2.5,9.5],bottom:-14});
     const H=x=>x<10?0:x<14?1:x<22?2.2:x<29?0:x<36?2:x<42?-99:3;
     for(let z=0;z<20;z++) for(let x=0;x<60;x++){ G.H[z][x]=z>=14?-99:H(x); G.T[z][x]=x>=22&&x<29?'thorn':'flag'; }
     for(let z=3;z<=5;z++) for(let x=0;x<60;x++){ G.H[z][x]=Math.max(G.H[z][x],0)+4; G.T[z][x]='brick'; } blockB(G,0,0,59,5); for(let z=0;z<3;z++) for(let x=0;x<60;x++) G.H[z][x]=-99;
@@ -1325,8 +1349,10 @@ const SCR={
   *villageBlocked(){ yield say('shayan',"The Elder asked me to welcome the new apothecary first. She should be by the fountain."); yield walkP(Player.x-1.5,Player.z,3); },
   *villageExit(){ yield fadeOut(); loadLevel('meadow',{mira:1,keepHP:1}); Game.fade=1; yield wait(.3); yield fadeIn();
     yield say('mira',"Starfall Ridge! It smells like rain and wildflowers up here.",'happy');
+    Game.letterTo=1; cineSet(Player.x-1,Player.y+2,Player.z+5,Player.x,Player.y+1.5,Player.z); yield cineTo([Player.x+1,Player.y+9.5,Player.z+3],[34,-22,-235],2.4);
     yield say('shayan',"And look, you can see the Sleeping Colossus from here.");
-    yield say('mira',"My mother said it dreams the stars into place every night. I always wanted to see it with someone.",'blush'); },
+    yield say('mira',"My mother said it dreams the stars into place every night. I always wanted to see it with someone.",'blush');
+    yield cineTo([Player.x,Player.y+5.8,Player.z+15.5],[Player.x,Player.y+1.6,Player.z],1.2); Cam.cine=null; Game.letterTo=0; },
   *glideHint(){ yield say('mira',"That gap is wide. Jump, jump again, then keep holding jump to open your glider!"); },
   *meadowTalk(){ yield say('mira',"By the way, you've looked back to check on me eleven times. I counted.",'happy');
     yield say('shayan',"It was ten.");
@@ -1535,9 +1561,9 @@ function updateCamera(dt){ const P=Player; let tx,ty,tz;
   if(Game.state==='title'){ Game.titleT=(Game.titleT||0)+dt; tx=8+((Game.titleT*.9)%24); ty=0; tz=12.5; }
   else if(Cam.focus){ tx=Cam.focus.x; ty=Cam.focus.y; tz=Cam.focus.z; } else { tx=P.x+Math.cos(P.ang)*.6; ty=Math.max(0,P.y*.7); tz=P.z; }
   if(L.w>24&&!L.circle){ tx=clamp(tx,9.5,L.w-9.5); }
-  const z=Cam.zoom*(Game.boss?1.12:1);
+  const z=Cam.zoom*(Game.boss?1.12:1); const CP=L.cam||{y:CAM_OFF.y,z:CAM_OFF.z,up:0}; ty+=CP.up;
   const k=1-Math.exp(-dt*5); Cam.look.x=lerp(Cam.look.x,tx,k); Cam.look.y=lerp(Cam.look.y,ty+.8,k); Cam.look.z=lerp(Cam.look.z,tz,k);
-  const px=Cam.look.x+CAM_OFF.x*z, py=Cam.look.y+CAM_OFF.y*z, pz=Cam.look.z+CAM_OFF.z*z;
+  const px=Cam.look.x, py=Cam.look.y+CP.y*z, pz=Cam.look.z+CP.z*z;
   const sh=FX.shake; const sx=sh?rnd(-sh,sh)*.6:0, sy=sh?rnd(-sh,sh)*.6:0;
   if(Cam.cine){ const c=Cam.cine; camera.position.set(c.px+sx,c.py+sy,c.pz); camera.lookAt(c.lx,c.ly,c.lz); }
   else { camera.position.set(px+sx,py+sy,pz); camera.lookAt(Cam.look.x,Cam.look.y,Cam.look.z); }
@@ -1575,7 +1601,7 @@ function drawHUD(){ const P=Player, t=performance.now()/1000;
     D.font=`700 14px ${FB}`; D.fillStyle='#ffb0c0'; D.fillText('Shayan',x,y+40); D.textAlign='right'; D.fillStyle='#c8a0ff'; D.fillText('Hydrahound',x+w,y+40); D.textAlign='left'; }
   const hp=Game.heartPop; if(hp){ hp.t+=1/60; const a=Math.max(0,1-hp.t/1.8); D.globalAlpha=a; D.font=`700 26px ${FB}`; D.fillStyle='#ff9ab0'; D.textAlign='right'; D.fillText('Mira '+'♥'.repeat(hp.n),UW-34,52-hp.t*14); D.textAlign='left'; D.globalAlpha=1; if(a<=0) Game.heartPop=null; }
   if(Game.hintT>0){ Game.hintT-=1/60; D.globalAlpha=Math.min(1,Game.hintT); frame(UW-520,84,490,150,.75); D.font=`500 18px ${FB}`; D.fillStyle='#e9e2cf';
-    ['WASD  move      Space  jump, again in the air to double jump','Hold Space after the double jump to glide','Left click  attack (hold, then release for Crescent Fang)','Right click  guard, tap right as a hit lands to parry','Shift  dash      E  talk'].forEach((s,i)=>D.fillText(s,UW-500,116+i*25)); D.globalAlpha=1; }
+    (IS_TOUCH()?['Left thumb: drag anywhere to move','Jump twice, hold the second jump to glide','Sword: attack, hold then let go for Crescent Fang','Shield: guard, tap as a hit lands to parry','Arrow: dash      Talk appears near people']:['WASD  move      Space  jump, again in the air to double jump','Hold Space after the double jump to glide','Left click  attack (hold, then release for Crescent Fang)','Right click  guard, tap right as a hit lands to parry','Shift  dash      E  talk']).forEach((s,i)=>D.fillText(s,UW-500,116+i*25)); D.globalAlpha=1; }
 }
 function drawTalkPrompt(){ if(Game.state!=='play'||Game.dlg) return; const n=nearestTalk(); if(!n) return; const t=performance.now()/1000;
   const [x,y0]=toScreen(n.x,n.y+2.1,n.z); const y=y0+Math.sin(t*4)*4; D.fillStyle='rgba(12,13,30,.85)'; D.beginPath(); D.arc(x,y,17,0,7); D.fill(); D.strokeStyle='#d8b46a'; D.lineWidth=2; D.stroke();
@@ -1601,27 +1627,27 @@ function drawDialog(){ const d=Game.dlg; if(!d) return; const t=performance.now(
   if(d.type==='say'){ D.font=`${narr?'italic ':''}500 27px ${FB}`; D.fillStyle=narr?'#d9d2ff':'#efe8d6'; const lines=wrap(d.text,maxW); let left=Math.floor(d.shown);
     lines.forEach((ln,i)=>{ if(left<=0) return; const s=ln.slice(0,left); left-=ln.length+1; D.fillText(s,tx,by+56+i*36); });
     if(d.shown>=d.text.length){ D.fillStyle='#d8b46a'; const yy=by+bh-26+Math.sin(t*6)*3; D.beginPath(); D.moveTo(bx+bw-44,yy); D.lineTo(bx+bw-30,yy); D.lineTo(bx+bw-37,yy+8); D.fill(); } }
-  else { D.font=`italic 500 18px ${FB}`; D.fillStyle='#b8a888'; D.fillText('Choose your words  (W / S, then E or click)',tx,by+40);
-    d.opts.forEach((o,i)=>{ const y=by+76+i*36, sel=i===d.sel; if(sel){ D.fillStyle='rgba(216,180,106,.16)'; D.fillRect(tx-14,y-26,maxW+20,34); D.fillStyle='#d8b46a'; D.beginPath(); D.moveTo(tx-6,y-16); D.lineTo(tx+4,y-9); D.lineTo(tx-6,y-2); D.fill(); }
+  else { D.font=`italic 500 18px ${FB}`; D.fillStyle='#b8a888'; D.fillText(IS_TOUCH()?'Choose your words  (tap a reply, tap again to say it)':'Choose your words  (W / S, then E or click)',tx,by+40);
+    Game.dlgRows=[]; d.opts.forEach((o,i)=>{ const y=by+76+i*36, sel=i===d.sel; Game.dlgRows.push([tx-14,y-26,maxW+20,34]); if(sel){ D.fillStyle='rgba(216,180,106,.16)'; D.fillRect(tx-14,y-26,maxW+20,34); D.fillStyle='#d8b46a'; D.beginPath(); D.moveTo(tx-6,y-16); D.lineTo(tx+4,y-9); D.lineTo(tx-6,y-2); D.fill(); }
       D.font=`${sel?700:500} 24px ${FB}`; D.fillStyle=sel?'#fff4d6':'#cfc6b0'; D.fillText(wrap(o.act?o.t:'“'+o.t+'”',maxW-30)[0],tx+16,y); }); } }
 function drawTitle(){ const t=performance.now()/1000; D.fillStyle='rgba(6,6,18,.3)'; D.fillRect(0,0,UW,UH); D.shadowColor='rgba(0,0,0,.8)'; D.shadowBlur=18;
   cText([['A Shayan Saqib Tale',`italic 500 26px ${FB}`,'#e9d6b0',190],["The Moonsinger's Bell",`900 72px ${FD}`,'#f6dfa6',270]]); D.shadowBlur=0; D.fillStyle='#d8b46a'; D.fillRect(UW/2-200,300,400,1.5);
-  D.globalAlpha=.6+.4*Math.sin(t*3); cText([['Click or press E to begin',`700 26px ${FB}`,'#fff4d6',370]]); D.globalAlpha=1;
+  D.globalAlpha=.6+.4*Math.sin(t*3); cText([[IS_TOUCH()?'Tap to begin':'Click or press E to begin',`700 26px ${FB}`,'#fff4d6',370]]); D.globalAlpha=1;
   cText([['About 25 minutes  ·  Fully voiced  ·  Your words with Mira shape the ending  ·  Sound on',`500 19px ${FB}`,'#e2dacb',UH-40]]); }
 function drawPause(){ D.fillStyle='rgba(6,6,18,.7)'; D.fillRect(0,0,UW,UH); frame(UW/2-320,80,640,500,.92); cText([['Paused',`900 44px ${FD}`,'#f3dfae',150]]);
   const rows=[['Move','WASD or arrow keys'],['Jump','Space (press again in the air)'],['Glide','Hold Space after the double jump'],['Attack','Left click or J  (three-hit combo)'],['Crescent Fang','Hold attack, then release'],['Guard / parry','Right click or L  (tap just before a hit)'],['Dash','Shift or K'],['Talk / advance','E or Enter'],['Voices','V toggles voice acting'],['Mute','M']];
   rows.forEach(([a,b],i)=>{ D.font=`700 21px ${FB}`; D.fillStyle='#d8b46a'; D.textAlign='right'; D.fillText(a,UW/2-20,206+i*32); D.textAlign='left'; D.font=`500 21px ${FB}`; D.fillStyle='#efe8d6'; D.fillText(b,UW/2+10,206+i*32); });
-  cText([['Esc to resume',`italic 500 20px ${FB}`,'#b8a888',556]]); }
+  cText([[IS_TOUCH()?'Tap to resume':'Esc to resume',`italic 500 20px ${FB}`,'#b8a888',556]]); }
 function drawDead(){ const a=Math.min(1,Game.deadT/1.2); D.fillStyle=`rgba(30,4,10,${.7*a})`; D.fillRect(0,0,UW,UH); D.globalAlpha=a;
   cText([['You have fallen',`900 54px ${FD}`,'#f0b0a0',290],[Game.boss?'You will rise at the start of this phase.':'The bell in your pocket is still ringing.',`italic 500 24px ${FB}`,'#e9d6c8',340]]);
-  if(Game.deadT>1.2){ D.globalAlpha=.6+.4*Math.sin(performance.now()/300); cText([['Click or press E to rise again',`700 24px ${FB}`,'#fff4d6',410]]); } D.globalAlpha=1; }
+  if(Game.deadT>1.2){ D.globalAlpha=.6+.4*Math.sin(performance.now()/300); cText([[IS_TOUCH()?'Tap to rise again':'Click or press E to rise again',`700 24px ${FB}`,'#fff4d6',410]]); } D.globalAlpha=1; }
 const STARS2=Array.from({length:120},()=>[Math.random()*UW,Math.random()*UH*.7,Math.random()]);
 function drawEnd(){ Game.endT+=1/60; const a=Math.min(1,Game.endT/2); D.fillStyle='#05050c'; D.fillRect(0,0,UW,UH);
   for(const [x,y,b] of STARS2){ D.fillStyle=`rgba(230,235,255,${(.3+.6*b)*a})`; D.fillRect(x,y,2,2); } D.fillStyle=`rgba(232,238,252,${a})`; D.beginPath(); D.arc(UW/2,150,46,0,7); D.fill();
   const names=['Tied Paths','A Promise at the Festival','Moonlit Friends'], e=Game.ending||0; D.globalAlpha=a; const mins=Math.floor(Game.time/60), secs=Math.floor(Game.time%60);
   cText([[`Ending ${e+1} of 3`,`italic 500 22px ${FB}`,'#b8a888',260],[names[e],`900 50px ${FD}`,'#f6dfa6',318],[`Mira's heart  ${'♥'.repeat(Math.min(Game.aff,13))}  (${Game.aff} of 13)`,`700 22px ${FB}`,'#ff9ab0',380],
     [`Time  ${mins}:${String(secs).padStart(2,'0')}    ·    Falls  ${Game.deaths}`,`500 20px ${FB}`,'#cfc6b0',414],['Thank you for playing The Moonsinger\'s Bell.',`italic 500 22px ${FB}`,'#e9e2cf',480]]);
-  if(Game.endT>3){ D.globalAlpha=.6+.4*Math.sin(performance.now()/300); cText([['Click or press E to return to the title',`700 22px ${FB}`,'#fff4d6',560]]); } D.globalAlpha=1; }
+  if(Game.endT>3){ D.globalAlpha=.6+.4*Math.sin(performance.now()/300); cText([[IS_TOUCH()?'Tap to return to the title':'Click or press E to return to the title',`700 22px ${FB}`,'#fff4d6',560]]); } D.globalAlpha=1; }
 function drawUI(){ D.setTransform(RW/UW,0,0,RH/UH,0,0); D.clearRect(0,0,UW,UH);
   if(Game.state==='end'){ drawEnd(); return; }
   const lb=Game.letter*70; if(lb>0){ D.fillStyle='#000'; D.fillRect(0,0,UW,lb); D.fillRect(0,UH-lb,UW,lb); }
@@ -1630,6 +1656,8 @@ function drawUI(){ D.setTransform(RW/UW,0,0,RH/UH,0,0); D.clearRect(0,0,UW,UH);
   if(Game.state!=='title'){ drawBanner(); drawCard(); drawDialog(); }
   if(Game.state==='paused') drawPause(); if(Game.state==='dead') drawDead(); }
 
+const IS_TOUCH=()=>document.body.classList.contains('touch');
+if(matchMedia('(pointer:coarse)').matches){ renderer.setSize(960,540,false); composer.setSize(960,540); sun.shadow.mapSize.set(1024,1024); }
 // ---------- flow ----------
 function respawn(){ const P=Player; endClash(); BEAMS.forEach(b=>scene.remove(b.g)); BEAMS=[]; DOGS.forEach(d=>d.spr&&d.spr.dispose()); DOGS=[];
   if(Game.boss){ const ph=Game.bossPhaseStart, aff=Game.aff, fl=Game.flags;
@@ -1660,6 +1688,7 @@ function loop(now){ let dt=Math.min(1/30,(now-last)/1000); last=now;
   if(Game.state!=='end'){ updateCamera(dt); drawSprites(); FX.update(sdt);
     grade.uniforms.flash.value=Math.min(.85,FX.flash); grade.uniforms.t.value=now/1000%10; grade.uniforms.ab.value=FX.shake*2+(Game.clash?.6:0);
     composer.render(); }
+  const TE=document.getElementById('touch'); if(TE){ const md=Game.state==='play'&&!Game.dlg?(Game.clash?'clash':'play'):'menu'; if(TE.dataset.mode!==md) TE.dataset.mode=md; const tk=md==='play'&&nearestTalk()?'1':'0'; if(TE.dataset.talk!==tk) TE.dataset.talk=tk; }
   drawUI(); if(dt>1/40){ slowFrames++; if(slowFrames>90&&bloom.enabled){ tiltV.enabled=tiltH.enabled=false; } } else slowFrames=Math.max(0,slowFrames-1);
   clearHits(); requestAnimationFrame(loop); }
 Game.onDeath=function(){ Game.state='dead'; Game.deadT=0; Game.deaths++; Sound.stop(); Voice.stop(); endClash(); Game.timeScale=1; Game.letterTo=0; };
@@ -1667,7 +1696,10 @@ Game.onDeath=function(){ Game.state='dead'; Game.deadT=0; Game.deaths++; Sound.s
 addEventListener('keydown',e=>{ if(e.code==='KeyV'){ Voice.on=!Voice.on; if(!Voice.on) Voice.stop(); Game.banner={name:Voice.on?'Voices on':'Voices off',sub:'',t:1.6,small:1}; } });
 // mouse: left = attack, right = guard
 ui.addEventListener('contextmenu',e=>e.preventDefault());
-ui.addEventListener('pointerdown',e=>{ ui.focus(); Sound.unlock(); if(e.pointerType==='mouse'){ if(e.button===0) press('attack'); if(e.button===2) press('block'); } else { press('confirm'); setTimeout(()=>release('confirm'),60); } });
+ui.addEventListener('pointerdown',e=>{ ui.focus(); Sound.unlock(); if(e.pointerType==='mouse'){ if(e.button===0) press('attack'); if(e.button===2) press('block'); } else touchTap(e); });
+function touchTap(e){ const r=ui.getBoundingClientRect(), x=(e.clientX-r.left)/r.width*UW, y=(e.clientY-r.top)/r.height*UH; const d=Game.dlg;
+  if(d&&d.type==='choice'&&Game.dlgRows){ const i=Game.dlgRows.findIndex(([rx,ry,rw,rh])=>x>=rx&&x<=rx+rw&&y>=ry&&y<=ry+rh); if(i>=0){ if(d.sel!==i){ d.sel=i; Sound.sfx('blip'); } else { press('confirm'); setTimeout(()=>release('confirm'),60); } } return; }
+  press('confirm'); setTimeout(()=>release('confirm'),60); }
 ui.addEventListener('pointerup',e=>{ if(e.pointerType==='mouse'){ if(e.button===0) release('attack'); if(e.button===2) release('block'); } });
 function fit(){ const wrapEl=document.getElementById('wrap'), hint=document.getElementById('hint');
   const aw=document.body.clientWidth-32, ah=document.body.clientHeight-(getComputedStyle(hint).display==='none'?16:hint.offsetHeight+24);
