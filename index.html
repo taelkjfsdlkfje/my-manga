@@ -1654,11 +1654,11 @@ function updateProps(dt){ if(L.destr) for(const p of L.destr){
   Game.debris=Game.debris.filter(g=>{ if(g.life<=0){ scene.remove(g.m); g.m.geometry.dispose(); return false; } return true; }); }
 
 // ================= GRIMMAW =================
-const PHASE_HP=48;
+const PHASE_HP=96;
 function makeBoss(x,z){ return {x,z,y:groundY(x,z),vx:0,vy:0,vz:0,r:.9,hp:PHASE_HP,maxHp:PHASE_HP,phase:1,state:'intro',st:0,t:0,f:-1,ang:Math.PI/2,flash:0,anim:'idle',inv:true,cd:.6,
   spr:new Sprite3D(128,128,28),waves:[],orbs:[],fans:[],onGround:true,chain:0}; }
 function bossSprite(b){ if(!b.spr||SPRITES.indexOf(b.spr)<0) b.spr=new Sprite3D(128,128,28); }
-const LEASH=16, DOME_R=9, BLOCK_ST=['intro','special','rain','clash','frenzy','dead','burnout','dome_in'];
+const LEASH=16, DOME_R=18, BLOCK_ST=['intro','special','rain','clash','frenzy','dead','burnout','dome_in'];
 function damageBoss(dmg,opt){ const b=Game.boss; if(!b) return; opt=opt||{};
   if(b.vanish||b.inv||BLOCK_ST.includes(b.state)){ Sound.sfx('block'); FX.spark(b.x,b.y+2,b.z); return; }
   if(b.state==='dome'){ const d=Math.round(dmg*(opt.armorX||1)*10)/10; b.armor=Math.max(0,b.armor-d); b.flash=.1; FX.spark(b.x+rnd(-.4,.4),b.y+rnd(1,2.6),b.z+.3); FX.burst(b.x,b.y+2,b.z,6,0x9fe0ff,3,.2);
@@ -1740,7 +1740,7 @@ function updateBoss(dt){ const b=Game.boss; if(!b) return; const P=Player, play=
     case 'frenzy': updateFrenzy(b,dt); break;
   }
   if(play&&!b.vanish){ const dd=Math.hypot(P.x-b.x,P.z-b.z);
-    if(dd>LEASH&&['idle','recover','winded','howling','dome'].includes(b.state)) bossBlinkNear(b,b.state==='dome'?5:7);
+    if(dd>LEASH&&['idle','recover','winded','howling'].includes(b.state)) bossBlinkNear(b,7);
     else if(dd>LEASH&&b.state==='charge') b.st=99;
     else if(dd>LEASH&&['spokes','spokes_w','clonesRun','volley_w','orbs_w','blades_w','fan_w','meteor_w','rainblades_w','slash_w','slash'].includes(b.state)){ endSpokes(b); bossBlinkNear(b,7); b.rush=0; b.state='recover'; b.st=0; } }
   b.vy-=G_ACC*1.1*dt; b.hitWall=0; if(b.state!=='dome'&&b.state!=='dome_in'&&b.state!=='spokes') moveBody(b,dt,.6); else { b.vx=b.vz=0; moveBody(b,dt,.6); }
@@ -1864,31 +1864,46 @@ function updateClones(b,dt,play){ const P=Player;
       if(!c.hit&&Math.hypot(P.x-c.x,P.z-c.z)<1.2&&Math.abs(P.y-c.y)<1.6){ const r=playerHit(2,c.x,c.z,{heavy:true,onParry:()=>{ c.d0=99; Game.dmgNums.push({x:c.x,y:c.y+3,z:c.z,n:'SHATTER',t:0,col:'#d0a0ff'}); }}); if(r!=='none') c.hit=true; }
       if(c.d0>15){ c.st='done'; c.done=1; FX.burst(c.x,c.y+1.6,c.z,22,0x2a0a3a,4,.45,false); FX.burst(c.x,c.y+1.6,c.z,10,0xa04aff,3,.3); c.spr.dispose(); c.gone=1; continue; } }
     c.spr.draw((cv,cx,by)=>drawGrimmawHD(cv,cx,by,c.f,{t:c.t,anim:c.st==='dash'?'charge':c.st==='tell'?'leapPrep':'idle',flash:0})); c.spr.place(c.x,c.y,c.z,c.y); } }
-function domeMesh(){ const g=new THREE.Group();
-  const geo=new THREE.SphereGeometry(DOME_R,28,12,0,Math.PI*2,0,Math.PI/2);
-  const wire=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0xff3a5a,wireframe:true,transparent:true,opacity:.32,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));
-  const skin=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0x8a1a3a,transparent:true,opacity:.07,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));
-  const base=new THREE.Mesh(new THREE.RingGeometry(DOME_R-.25,DOME_R,64),new THREE.MeshBasicMaterial({color:0xff4a6a,transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));
-  base.rotation.x=-Math.PI/2; base.position.y=.06; g.add(wire,skin,base); g.userData.wire=wire; g.userData.skin=skin; return g; }
+function domeWallTex(){ const [cv,c]=mkCanvas(8,128); const g=c.createLinearGradient(0,0,0,128); g.addColorStop(0,'rgba(255,60,90,0)'); g.addColorStop(.55,'rgba(255,60,90,.35)'); g.addColorStop(.9,'rgba(255,120,150,.95)'); g.addColorStop(1,'rgba(255,230,240,1)');
+  c.fillStyle=g; c.fillRect(0,0,8,128); return tex(cv); }
+function domeMesh(){ const g=new THREE.Group(), add={transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,fog:false};
+  const geo=new THREE.SphereGeometry(DOME_R,40,16,0,Math.PI*2,0,Math.PI/2);
+  const wire=new THREE.Mesh(geo,new THREE.MeshBasicMaterial(Object.assign({color:0xff3a5a,wireframe:true,opacity:.3},add)));
+  const skin=new THREE.Mesh(geo,new THREE.MeshBasicMaterial(Object.assign({color:0x8a1a3a,opacity:.08,side:THREE.DoubleSide},add)));
+  // glowing wall band at the base so the boundary reads clearly
+  const band=new THREE.Mesh(new THREE.CylinderGeometry(DOME_R,DOME_R,3,128,1,true),new THREE.MeshBasicMaterial(Object.assign({map:domeWallTex(),color:0xffffff,opacity:.85,side:THREE.DoubleSide},add))); band.position.y=1.5;
+  const base=new THREE.Mesh(new THREE.RingGeometry(DOME_R-.6,DOME_R,128),new THREE.MeshBasicMaterial(Object.assign({color:0xff5a7a,opacity:.95,side:THREE.DoubleSide},add))); base.rotation.x=-Math.PI/2; base.position.y=.07;
+  // tinted floor with rings so the inside is obvious at a glance
+  const floor=new THREE.Mesh(new THREE.CircleGeometry(DOME_R,96),new THREE.MeshBasicMaterial(Object.assign({color:0xff2a50,opacity:.16,side:THREE.DoubleSide},add))); floor.rotation.x=-Math.PI/2; floor.position.y=.05;
+  g.add(wire,skin,band,base,floor);
+  for(let r=3;r<DOME_R-1;r+=3){ const rg=new THREE.Mesh(new THREE.RingGeometry(r-.06,r+.06,96),new THREE.MeshBasicMaterial(Object.assign({color:0xff6a8a,opacity:.28,side:THREE.DoubleSide},add))); rg.rotation.x=-Math.PI/2; rg.position.y=.06; g.add(rg); }
+  for(let k=0;k<12;k++){ const a=k*Math.PI/6, sp=new THREE.Mesh(new THREE.PlaneGeometry(.1,DOME_R),new THREE.MeshBasicMaterial(Object.assign({color:0xff6a8a,opacity:.18,side:THREE.DoubleSide},add))); sp.rotation.x=-Math.PI/2; sp.rotation.z=a; sp.position.set(Math.sin(a)*DOME_R/2,.06,Math.cos(a)*DOME_R/2); g.add(sp); }
+  g.userData.wire=wire; g.userData.skin=skin; g.userData.band=band; g.userData.floor=floor; return g; }
 function startDome(b){ const P=Player; clearBossFx(b); b.domeDone=1; b.state='dome_in'; b.st=0; b.vx=b.vz=0; b.armor=b.maxArmor=PHASE_HP; P.charge=0;
   if(Math.hypot(P.x-b.x,P.z-b.z)>6) bossBlinkNear(b,5);
-  const g=domeMesh(); g.position.set(b.x,b.y,b.z); g.scale.setScalar(.01); L.root.add(g); b.dome={g,t:0,vt:1.4,close:0};
-  Game.banner={name:'Laser Dome',sub:'Parry the red lights back at him. Dash through the blue.',t:0}; Voice.bark('dome'); Sound.sfx('drone'); Sound.sfx('howl'); Game.slowT=.5; shake(.5); }
+  const g=domeMesh(); g.position.set(b.x,groundY(b.x,b.z),b.z); g.scale.setScalar(.01); L.root.add(g); b.dome={g,t:0,vt:1.4,close:0};
+  Game.banner={name:'Laser Dome',sub:'No escape. Parry the red lights back at him. Dash through the blue.',t:0}; Voice.bark('dome'); Sound.sfx('drone'); Sound.sfx('howl'); Game.slowT=.5; shake(.5); }
 function endDome(b){ if(b&&b.dome){ L.root.remove(b.dome.g); scene.remove(b.dome.g); b.dome=null; } if(b) BOLTS.forEach(o=>{ if(o.kind==='laser'&&!o.friendly) o.dead=1; }); }
 function breakDome(b){ const D=b.dome, P=Player;
-  if(D){ const c=D.g.position; for(let i=0;i<46;i++){ const az=rnd(0,6.28), el=rnd(0,1.4), x=c.x+Math.cos(el)*Math.cos(az)*DOME_R, y=c.y+Math.sin(el)*DOME_R, z=c.z+Math.cos(el)*Math.sin(az)*DOME_R;
+  if(D){ const c=D.g.position; for(let i=0;i<120;i++){ const az=rnd(0,6.28), el=rnd(0,1.4), x=c.x+Math.cos(el)*Math.cos(az)*DOME_R, y=c.y+Math.sin(el)*DOME_R, z=c.z+Math.cos(el)*Math.sin(az)*DOME_R;
       FX.spawn(x,y,z,rnd(-2,2),rnd(-4,1),rnd(-2,2),rnd(.6,1.2),i%3?0xff3a5a:0x9fe0ff,rnd(.3,.6),6,true); } }
   endDome(b); b.armor=0; b.state='stagger'; b.st=0; b.stagT=3.2; b.vx=b.vz=0; b.flash=.4;
   Sound.sfx('crossboom'); Sound.sfx('tear'); shake(.9); Game.slowT=.7; FX.flash=.5; grade.uniforms.flashCol.value.set(.6,.85,1);
   Game.dmgNums.push({x:b.x,y:b.y+4.2,z:b.z,n:'ARMOR BROKEN',t:0,big:true,col:'#9fe0ff'}); Voice.bark('armor'); }
 function updateDome(b,dt){ const D=b.dome, P=Player; if(!D){ b.state='recover'; b.st=0; return; } D.t+=dt; b.vx=b.vz=0; b.ang=Math.atan2(P.z-b.z,P.x-b.x);
-  const g=D.g, wire=g.userData.wire; g.rotation.y+=dt*.18; wire.material.opacity=.26+.1*Math.sin(D.t*4);
+  const g=D.g, wire=g.userData.wire; g.rotation.y+=dt*.12; wire.material.opacity=.26+.1*Math.sin(D.t*4); g.userData.floor.material.opacity=.1+.04*Math.sin(D.t*3);
+  const cx=g.position.x, cz=g.position.z, pr=Math.hypot(P.x-cx,P.z-cz), lim=DOME_R-.9;
+  g.userData.band.material.opacity=.7+clamp((pr-(DOME_R-5))/4,0,1)*.3+.1*Math.sin(D.t*6);
+  if(b.state==='dome'&&pr>lim){ const ux=(P.x-cx)/pr, uz=(P.z-cz)/pr; P.x=cx+ux*lim; P.z=cz+uz*lim; const out=P.vx*ux+P.vz*uz; if(out>0){ P.vx-=ux*out*1.6; P.vz-=uz*out*1.6; }
+    if(!D.zap||D.zap<=0){ D.zap=.25; Sound.sfx('block'); FX.burst(cx+ux*DOME_R,P.y+1,cz+uz*DOME_R,14,0xff6a8a,3,.25); } }
+  D.zap=(D.zap||0)-dt;
   if(b.state==='dome_in'){ b.anim='howl'; b.inv=true; const k=Math.min(1,b.st/1.3); g.scale.setScalar(.01+k*.99*(2-k)); if(Math.random()<.8) FX.spawn(b.x+rnd(-1,1),b.y+rnd(.5,4),b.z+rnd(-1,1),0,3,0,.6,0xff3a5a,.4,0,true);
     if(b.st>1.5){ b.state='dome'; b.st=0; b.inv=false; } return; }
   b.anim=(D.t%2.6)<.5?'howl':'idle'; if(Math.random()<.35) FX.spawn(b.x+rnd(-.6,.6),b.y+rnd(.5,3.5),b.z+rnd(-.4,.4),0,1.5,0,.6,0x9fe0ff,.3,0,true);
   D.vt-=dt; if(D.vt<=0){ D.vt=Math.max(.65,1.35-D.t*.022); const n=Math.min(6,2+Math.floor(D.t/7)), c=g.position; Sound.sfx('charge');
     for(let i=0;i<n;i++){ const red=i===0||Math.random()<.55, az=rnd(0,6.28), el=rnd(.3,1.05);
-      spawnProj({kind:'laser',x:c.x+Math.cos(el)*Math.cos(az)*DOME_R,y:c.y+Math.sin(el)*DOME_R,z:c.z+Math.cos(el)*Math.sin(az)*DOME_R,vx:0,vz:0,delay:.7+i*.14,spd:red?10:12.5,
+      const pa=Math.atan2(P.z-c.z,P.x-c.x), az2=Math.random()<.7?pa+rnd(-1.1,1.1):az, el2=Math.random()<.7?rnd(.12,.55):el;
+      spawnProj({kind:'laser',x:c.x+Math.cos(el2)*Math.cos(az2)*DOME_R,y:c.y+Math.sin(el2)*DOME_R,z:c.z+Math.cos(el2)*Math.sin(az2)*DOME_R,vx:0,vz:0,delay:.8+i*.14,spd:red?13:15.5,
         col:red?0xff3a4a:0x3a8aff,noParry:!red,dmg:2,life:3,src:b}); } }
   const dd=Math.hypot(P.x-b.x,P.z-b.z); D.close=dd<2.6?D.close+dt:Math.max(0,D.close-dt*.5);
   if(D.close>2){ D.close=0; b.anim='leapPrep'; Sound.sfx('slam'); Voice.bark('slam'); shake(.5); FX.ring(b.x,b.y,b.z,'#9fe0ff',2.4,.35); b.waves.push({r:.6,hit:false,d:.15}); } }
