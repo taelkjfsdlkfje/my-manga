@@ -1584,7 +1584,8 @@ function vhash(s){ let h=5381; for(let i=0;i<s.length;i++) h=((h*33)^s.charCodeA
 
 function run(gen,keep){ Game.script=gen(); Game.sv=undefined; if(!keep) Game.state='cut'; Player.scripted=null; step(); }
 function step(){
-  while(Game.script){ const r=Game.script.next(Game.sv); Game.sv=undefined;
+  while(Game.script){ const g=Game.script; const r=g.next(Game.sv); Game.sv=undefined;
+    if(Game.script!==g) return; // a new cutscene started from inside this one; it now owns the screen
     if(r.done){ Game.script=null; Game.wait=null; Player.scripted=null; if(Game.state==='cut') Game.state='play'; clearHits(); return; }
     const c=r.value; if(!c) continue;
     if(c.type==='say'||c.type==='choice'){ Game.dlg={...c,shown:0,sel:0,t:0}; Game.wait=c; if(c.type==='say') Voice.play(c.who,c.text); return; }
