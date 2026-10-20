@@ -1099,6 +1099,16 @@ PAL.lake=PAL.keep;
 function destr(G,kind,box,hp,fn){ const n0=G.root.children.length, l0=G.lightSrc.length, a0=G.anim.length; fn();
   const p={kind,x0:box[0],z0:box[1],x1:box[2],z1:box[3],h:box[4]||2,hp,max:hp,meshes:G.root.children.slice(n0),lights:G.lightSrc.slice(l0),anims:G.anim.slice(a0),shake:0};
   p.base=p.meshes.map(m=>m.position.clone()); p.cx=(p.x0+p.x1)/2; p.cz=(p.z0+p.z1)/2; (G.destr=G.destr||[]).push(p); return p; }
+function addSkipSign(G,x,z){ const y=groundY(x,z), wood=new THREE.MeshLambertMaterial({color:0x7a4e2c}), dark=new THREE.MeshLambertMaterial({color:0x4a2e1a});
+  addBox(G,.16,1.5,.16,dark,x-.7,y,z); addBox(G,.16,1.5,.16,dark,x+.7,y,z);
+  const [cv,c]=mkCanvas(128,48); c.fillStyle='#8a5a32'; c.fillRect(0,0,128,48); for(let i=0;i<5;i++){ c.fillStyle=i%2?'#7a4e2c':'#946238'; c.fillRect(0,i*10,128,9); }
+  c.fillStyle='#4a2e1a'; c.fillRect(0,0,128,3); c.fillRect(0,45,128,3); c.fillRect(0,0,3,48); c.fillRect(125,0,3,48); [[6,6],[118,6],[6,38],[118,38]].forEach(([a,b])=>{ c.fillStyle='#2a1a10'; c.fillRect(a,b,4,4); });
+  c.font='bold 17px monospace'; c.textAlign='center'; c.fillStyle='#2a1608'; c.fillText('SKIP TO',64,21); c.fillText('BOSS',64,40); c.fillStyle='#f3dfae'; c.fillText('SKIP TO',63,20); c.fillText('BOSS',63,39);
+  const board=new THREE.Mesh(new THREE.BoxGeometry(1.9,.72,.1),[wood,wood,wood,wood,new THREE.MeshLambertMaterial({map:tex(cv)}),wood]); board.position.set(x,y+1.2,z); board.castShadow=true; G.root.add(board);
+  // a little wisp above the roofline so curious players notice something back there
+  const wisp=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffd27a,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true})); wisp.scale.set(1.1,1.1,1); G.root.add(wisp);
+  G.anim.push(dt=>{ const t=performance.now()/1000; wisp.position.set(x+Math.sin(t*1.3)*.3,y+6.2+Math.sin(t*2.1)*.35,z); if(Math.random()<.15) FX.spawn(x+rnd(-.4,.4),y+6+rnd(-.3,.3),z,0,.4,0,.9,0xffd27a,.18,0,true); });
+  G.sign={x,y,z:z+.5}; }
 const LEVELDEF={
   village(){ const G=newGrid(40,24,'village'); G.tx=makeTileTextures('village'); Object.assign(G,{cam:{y:5.4,z:15.5,up:1.3},key:'village',look:'village',music:'village',name:'Lanternbrook',sub:'The Village of a Thousand Lanterns',spawn:[4,12.8]});
     blockB(G,0,0,39,4); blockB(G,0,22,39,23); blockB(G,0,0,0,23); blockB(G,39,0,39,23);
@@ -1123,6 +1133,7 @@ const LEVELDEF={
       {type:'npc',who:'villagerf',x:31,z:14,wander:1,look:{cloth:'#d0a050',clothS:'#a87a30',skin:'#d8a07a',hair:'#2a1a10'}},
       {type:'npc',who:'villagerm',x:6,z:16.5,wander:1,look:{cloth:'#7a5a8a',clothS:'#5a406a',skin:'#e0b090',hair:'#c0a060'}});
     G.pick.push({kind:'heart',x:34.8,z:16.4});
+    for(let x=1;x<=10;x++) G.B[4][x]=false; addSkipSign(G,5.6,4.45);
     G.trig.push({x:37.6,id:'villageExit'});
     // vista
     G.root.add(skyDome(LOOKS.village.sky,LOOKS.village.sunDir,LOOKS.village.sunCol,LOOKS.village.sunSize));
@@ -2035,6 +2046,11 @@ const SCR={
   *elderAgain(){ const d=L.dummy;
     if(d&&d.hits<4) yield say('elder',"Give that straw hound a proper thrashing. Three quick strikes, then hold the blade and release it.");
     else yield say('elder',"Good form! A charged strike cuts the very air. Now go, the fountain is waiting.",'happy'); },
+  *sign(){ yield say('',"A weathered wooden sign. Someone has carved into it: SKIP TO BOSS. Skip the story and go straight to the fight with Grimmaw?");
+    const c=yield choose([{t:"Yes, take me to the boss fight.",aff:0},{t:"No, I'll play through the story.",aff:0}]);
+    if(c!==0) return; const fl=Game.flags; fl.metMira=1; fl.bellMemory=1; Game.aff=Math.max(Game.aff,6);
+    if(Game.hamza&&Game.hamza.mode==='hidden') Game.hamza.mode='follow';
+    yield* SCR.keepGate(); },
   *baker(){ yield say('baker',"Shayan! Tell the new girl the honey buns are on the house tomorrow. Everyone needs a friend in a new village.",'happy');
     if(Game.flags.metMira) yield say('baker',"Oh? Walking the apothecary up to the ridge, are we? Look at you, blushing like a forge coal.",'happy'); },
   *kid(){ const up=Player.y>2.5;
@@ -2411,6 +2427,7 @@ function drawSprites(){ const P=Player, t=performance.now()/1000;
     n.spr.draw((c,cx,by)=>drawVillagerHD(c,cx,by,f,n,n.look)); n.spr.place(n.x,n.y,n.z); }
   const d=L.dummy; if(d){ d.spr.draw((c,cx,by)=>drawDummyHD(c,cx,by,d)); d.spr.place(d.x,d.y,d.z); }
   for(const m of MOBS){ m.spr.draw((c,cx,by)=>m.type==='elder'?drawVillagerHD(c,cx,by,m.f,{t:m.t,moving:Math.hypot(m.vx,m.vz)>.3},m.look):drawHoundHD(c,cx,by,m.f,m,m.type==='hound'?false:m.type)); m.spr.place(m.x,m.y,m.z,groundY(m.x,m.z)); m.spr.glow(m.flash>0&&m.type==='elder'?.9:(m.state==='tell'||m.state==='cast'||m.state==='smash')?.3:0); }
+  houseFade();
   const b=Game.boss; if(b&&b.spr&&SPRITES.indexOf(b.spr)>=0){ b.spr.draw((c,cx,by)=>drawGrimmawHD(c,cx,by,b.f,b)); b.spr.place(b.x,b.y+(b.hover||0),b.z,groundY(b.x,b.z));
     b.spr.glow(b.state==='stagger'?.25+.2*Math.sin(t*20):['rain','frenzy','special'].includes(b.state)?.15:0); }
   for(const p of L.pick) if(!p.taken){ p.spr.place(p.x,p.y+.35+Math.sin((p.t||0)*3)*.12,p.z,p.y); }
@@ -2473,8 +2490,14 @@ function drawHUD(){ const P=Player, t=performance.now()/1000;
 function drawTalkPrompt(){ if(Game.state!=='play'||Game.dlg) return; const n=nearestTalk(); if(!n) return; const t=performance.now()/1000;
   const [x,y0]=toScreen(n.x,n.y+2.1,n.z); const y=y0+Math.sin(t*4)*4; D.fillStyle='rgba(12,13,30,.85)'; D.beginPath(); D.arc(x,y,17,0,7); D.fill(); D.strokeStyle='#d8b46a'; D.lineWidth=2; D.stroke();
   D.font=`700 18px ${FB}`; D.fillStyle='#f3dfae'; D.textAlign='center'; D.fillText('E',x,y+6); D.textAlign='left'; }
+function houseFade(){ if(!L||L.key!=='village'||!L.destr) return; const P=Player;
+  for(const p of L.destr){ if(p.kind!=='house'||p.dead) continue; const behind=P.x>p.x0-.6&&P.x<p.x1+.6&&P.z<p.z0+.4&&P.z>p.z0-2.5;
+    p.fade=lerp(p.fade==null?1:p.fade,behind?.18:1,.15); if(Math.abs(p.fade-1)<.01&&!behind){ if(p.fadeOn){ p.fadeOn=0; p.meshes.forEach(m=>m.traverse(o=>{ if(o.material&&o.userData.fm){ (Array.isArray(o.material)?o.material:[o.material]).forEach(mt=>{ mt.opacity=1; mt.transparent=false; mt.depthWrite=true; }); } })); } continue; }
+    p.fadeOn=1; p.meshes.forEach(m=>m.traverse(o=>{ if(!o.material) return; if(!o.userData.fm){ o.material=Array.isArray(o.material)?o.material.map(x=>x.clone()):o.material.clone(); o.userData.fm=1; }
+      (Array.isArray(o.material)?o.material:[o.material]).forEach(mt=>{ mt.transparent=true; mt.opacity=p.fade; mt.depthWrite=p.fade>.9; }); })); } }
 function nearestTalk(){ const P=Player; let best=null,bd=1.7; for(const n of NPCS){ const d=Math.hypot(n.x-P.x,n.z-P.z); if(d<bd&&Math.abs(n.y-P.y)<2.6){ bd=d; best=n; } }
-  const mi=Game.mira; if(mi&&mi.vis&&!Game.flags.metMira&&Math.hypot(mi.x-P.x,mi.z-P.z)<2) best={who:'mira',x:mi.x,y:mi.y,z:mi.z}; return best; }
+  const mi=Game.mira; if(mi&&mi.vis&&!Game.flags.metMira&&Math.hypot(mi.x-P.x,mi.z-P.z)<2) best={who:'mira',x:mi.x,y:mi.y,z:mi.z};
+  const sg=L.sign; if(sg&&Math.hypot(sg.x-P.x,sg.z-P.z)<1.9) best={who:'sign',x:sg.x,y:sg.y,z:sg.z-.5}; return best; }
 function drawBanner(){ const bn=Game.banner; if(!bn) return; bn.t+=1/60; const life=bn.small?3:3.4; const a=bn.t<.6?bn.t/.6:bn.t>life-.8?Math.max(0,(life-bn.t)/.8):1; if(bn.t>life){Game.banner=null;return;}
   D.globalAlpha=a; D.textAlign='center'; D.shadowColor='rgba(0,0,0,.7)'; D.shadowBlur=12; const y0=110+Game.letter*40;
   D.font=`900 ${bn.small?34:52}px ${FD}`; D.fillStyle='#f3dfae'; D.fillText(bn.name,UW/2,y0);
