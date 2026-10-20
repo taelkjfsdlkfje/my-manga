@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Moonsinger">
 <style>[hidden]{display:none!important}</style>
 <title>The Moonsinger's Bell</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -46,8 +48,14 @@ body.touch #touch{display:block} body.touch #hint{display:none}
 #tbDash{width:clamp(52px,14vh,74px);height:clamp(52px,14vh,74px);right:calc(4.5% + env(safe-area-inset-right,0px));bottom:calc(9% + clamp(70px,20vh,104px) + 12px + env(safe-area-inset-bottom,0px))}
 #tbGuard{width:clamp(52px,14vh,74px);height:clamp(52px,14vh,74px);right:calc(4% + clamp(70px,20vh,104px) + 4px + env(safe-area-inset-right,0px));bottom:calc(9% + clamp(70px,20vh,104px) - 6px + env(safe-area-inset-bottom,0px))}
 #tbTalk{right:calc(4% + clamp(70px,20vh,104px)*1.9 + 14px + env(safe-area-inset-right,0px));bottom:calc(28% + env(safe-area-inset-bottom,0px));width:auto;height:auto;border-radius:24px;padding:8px 16px;font:700 15px var(--body);gap:6px;border-color:var(--gold)}
-#tbPause,#tbFull{top:calc(10px + env(safe-area-inset-top,0px));width:40px;height:40px;font:700 14px var(--body)}
-#tbPause{right:calc(10px + env(safe-area-inset-right,0px))} #tbFull{right:calc(58px + env(safe-area-inset-right,0px))}
+#tbPause{top:calc(10px + env(safe-area-inset-top,0px));width:40px;height:40px;font:700 14px var(--body);right:calc(10px + env(safe-area-inset-right,0px))}
+#tbFull{top:calc(10px + env(safe-area-inset-top,0px));right:calc(58px + env(safe-area-inset-right,0px));height:40px;width:auto;border-radius:20px;padding:0 14px 0 10px;gap:6px;font:700 14px var(--body);border-color:var(--gold)}
+#tbFull svg{width:20px;height:20px}
+body.isfull #tbFull .fsl::after{content:'Exit full screen'} body:not(.isfull) #tbFull .fsl::after{content:'Full screen'}
+body.pseudofs{padding:0!important;gap:0} body.pseudofs #wrap,body.isfull #wrap{box-shadow:none}
+body.pseudofs #hint,body.isfull #hint{display:none}
+#fsTip{position:absolute;left:50%;top:calc(58px + env(safe-area-inset-top,0px));transform:translateX(-50%);max-width:86%;background:rgba(12,13,30,.92);border:1.5px solid var(--gold);border-radius:12px;padding:10px 14px;font:500 14px var(--body);color:var(--parchment);text-align:center;pointer-events:auto;line-height:1.4}
+#fsTip b{color:var(--gold)}
 #touch[data-mode="menu"] .act,#touch[data-mode="menu"] #stickZone,#touch[data-mode="menu"] #stickGhost{display:none}
 #touch[data-mode="clash"] .act:not(#tbAttack),#touch[data-mode="clash"] #stickGhost{display:none}
 #touch:not([data-talk="1"]) #tbTalk{display:none}
@@ -68,7 +76,8 @@ body.touch #touch{display:block} body.touch #hint{display:none}
     <button class="tb act" id="tbDash" data-k="dash" aria-label="Dash"><svg viewBox="0 0 24 24"><path d="M4 12h10M10 6l6 6-6 6M18 6v12"/></svg></button>
     <button class="tb act" id="tbGuard" data-k="block" aria-label="Guard, tap as a hit lands to parry"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg></button>
     <button class="tb act" id="tbTalk" data-k="confirm" aria-label="Talk">Talk</button>
-    <button class="tb" id="tbFull" aria-label="Full screen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    <button class="tb" id="tbFull" aria-label="Toggle full screen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span class="fsl"></span></button>
+    <div id="fsTip" hidden></div>
     <button class="tb" id="tbPause" data-k="pause" aria-label="Pause">II</button>
   </div>
 </div>
@@ -108,7 +117,7 @@ addEventListener('blur',()=>{for(const k in held) if(held[k]) release(k);});
   T.querySelectorAll('.tb[data-k]').forEach(b=>{ const k=b.dataset.k;
     b.addEventListener('pointerdown',e=>{ e.preventDefault(); e.stopPropagation(); try{b.setPointerCapture(e.pointerId);}catch(_){} b.classList.add('on'); press(k); Sound.unlock(); if(navigator.vibrate) try{navigator.vibrate(8);}catch(_){} });
     const up=()=>{ b.classList.remove('on'); release(k); }; b.addEventListener('pointerup',up); b.addEventListener('pointercancel',up); b.addEventListener('lostpointercapture',up); });
-  document.getElementById('tbFull').addEventListener('click',()=>{ const el=document.documentElement; try{ if(document.fullscreenElement) document.exitFullscreen(); else if(el.requestFullscreen) el.requestFullscreen({navigationUI:'hide'}).then(()=>{ try{ screen.orientation.lock('landscape'); }catch(_){} }).catch(()=>{}); }catch(_){} });
+  const fb=document.getElementById('tbFull'); fb.addEventListener('pointerdown',e=>{ e.stopPropagation(); }); fb.addEventListener('click',e=>{ e.stopPropagation(); toggleFull(); });
   const zone=document.getElementById('stickZone'), base=document.getElementById('stickBase'), knob=document.getElementById('stickKnob'); let id=null, ox=0, oy=0;
   zone.addEventListener('pointerdown',e=>{ e.preventDefault(); Sound.unlock(); if(window.onTouchTap&&window.onTouchTap(e)) return; if(id!==null) return; id=e.pointerId; try{zone.setPointerCapture(id);}catch(_){}
     const r=T.getBoundingClientRect(); ox=e.clientX; oy=e.clientY; base.style.left=(ox-r.left)+'px'; base.style.top=(oy-r.top)+'px'; base.hidden=false; knob.style.transform='translate(-50%,-50%)'; });
@@ -116,6 +125,21 @@ addEventListener('blur',()=>{for(const k in held) if(held[k]) release(k);});
     Stick.x=Math.abs(x)>.12?x:0; Stick.z=Math.abs(y)>.12?y:0; knob.style.transform=`translate(calc(-50% + ${x*R*.62}px),calc(-50% + ${y*R*.62}px))`; });
   const end=e=>{ if(e.pointerId!==id) return; id=null; Stick.x=Stick.z=0; base.hidden=true; }; zone.addEventListener('pointerup',end); zone.addEventListener('pointercancel',end);
 })();
+// ---------- full screen (real API where allowed, otherwise fill the browser window) ----------
+function fsEl(){ return document.fullscreenElement||document.webkitFullscreenElement||null; }
+function inFull(){ return !!fsEl()||document.body.classList.contains('pseudofs'); }
+function syncFull(){ document.body.classList.toggle('isfull',inFull()); dispatchEvent(new Event('resize')); }
+function fsTip(html){ const t=document.getElementById('fsTip'); if(!t) return; t.innerHTML=html; t.hidden=false; clearTimeout(t._h); t._h=setTimeout(()=>{t.hidden=true;},7000); t.onclick=()=>{t.hidden=true;}; }
+function toggleFull(){ const el=document.documentElement;
+  if(inFull()){ document.body.classList.remove('pseudofs'); try{ if(document.exitFullscreen&&document.fullscreenElement) document.exitFullscreen(); else if(document.webkitExitFullscreen&&document.webkitFullscreenElement) document.webkitExitFullscreen(); }catch(_){} syncFull(); setTimeout(syncFull,400); return; }
+  const fallback=()=>{ document.body.classList.add('pseudofs'); syncFull(); setTimeout(()=>window.scrollTo(0,1),50);
+    const ios=/iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1&&!el.requestFullscreen);
+    fsTip(ios?"The game now fills the window. iPhone Safari doesn't allow true full screen for web games. For it, tap <b>Share</b>, then <b>Add to Home Screen</b>, and open the game from your home screen.":"The game now fills the window. This browser blocked true full screen; opening the page directly in Chrome or Safari usually allows it."); };
+  const req=el.requestFullscreen||el.webkitRequestFullscreen;
+  if(!req){ fallback(); return; }
+  try{ const p=req.call(el,{navigationUI:'hide'}); const ok=()=>{ syncFull(); try{ screen.orientation.lock('landscape').catch(()=>{}); }catch(_){} };
+    if(p&&p.then) p.then(ok).catch(fallback); else setTimeout(()=>{ if(fsEl()) ok(); else fallback(); },300); }catch(_){ fallback(); } }
+document.addEventListener('fullscreenchange',syncFull); document.addEventListener('webkitfullscreenchange',syncFull);
 function consume(a){ const v=!!hit[a]; hit[a]=false; return v; }
 function released(a){ const v=!!relz[a]; relz[a]=false; return v; }
 function clearHits(){ for(const k in hit) hit[k]=false; for(const k in relz) relz[k]=false; }
@@ -1674,7 +1698,7 @@ let last=performance.now(), slowFrames=0;
 function loop(now){ let dt=Math.min(1/30,(now-last)/1000); last=now;
   if(consume('mute')) Sound.toggleMute();
   const st=Game.state;
-  if(st==='title'){ if(consume('confirm')||consume('attack')||consume('jump')){ Sound.unlock(); Voice.prewarm(); Sound.sfx('select'); Game.state='cut'; newGame(); } }
+  if(st==='title'){ if(consume('confirm')||consume('attack')||consume('jump')){ if(IS_TOUCH()&&!inFull()) toggleFull(); Sound.unlock(); Voice.prewarm(); Sound.sfx('select'); Game.state='cut'; newGame(); } }
   else if(st==='paused'){ if(consume('pause')||consume('confirm')) Game.state=Game.prev; }
   else if(st==='dead'){ Game.deadT+=dt; if(Game.deadT>1.2&&(consume('confirm')||consume('attack'))) respawn(); }
   else if(st==='end'){ Game.endT=Game.endT||0; if(Game.endT>3&&(consume('confirm')||consume('attack'))) toTitle(); }
@@ -1697,12 +1721,13 @@ addEventListener('keydown',e=>{ if(e.code==='KeyV'){ Voice.on=!Voice.on; if(!Voi
 // mouse: left = attack, right = guard
 ui.addEventListener('contextmenu',e=>e.preventDefault());
 ui.addEventListener('pointerdown',e=>{ ui.focus(); Sound.unlock(); if(e.pointerType==='mouse'){ if(e.button===0) press('attack'); if(e.button===2) press('block'); } else touchTap(e); });
-function touchTap(e){ const r=ui.getBoundingClientRect(), x=(e.clientX-r.left)/r.width*UW, y=(e.clientY-r.top)/r.height*UH; const d=Game.dlg;
+function touchTap(e){ if(Game.state==='title'&&!inFull()) toggleFull(); const r=ui.getBoundingClientRect(), x=(e.clientX-r.left)/r.width*UW, y=(e.clientY-r.top)/r.height*UH; const d=Game.dlg;
   if(d&&d.type==='choice'&&Game.dlgRows){ const i=Game.dlgRows.findIndex(([rx,ry,rw,rh])=>x>=rx&&x<=rx+rw&&y>=ry&&y<=ry+rh); if(i>=0){ if(d.sel!==i){ d.sel=i; Sound.sfx('blip'); } else { press('confirm'); setTimeout(()=>release('confirm'),60); } } return; }
   press('confirm'); setTimeout(()=>release('confirm'),60); }
 ui.addEventListener('pointerup',e=>{ if(e.pointerType==='mouse'){ if(e.button===0) release('attack'); if(e.button===2) release('block'); } });
-function fit(){ const wrapEl=document.getElementById('wrap'), hint=document.getElementById('hint');
-  const aw=document.body.clientWidth-32, ah=document.body.clientHeight-(getComputedStyle(hint).display==='none'?16:hint.offsetHeight+24);
+function fit(){ const wrapEl=document.getElementById('wrap'), hint=document.getElementById('hint'), full=inFull();
+  const vw=window.innerWidth, vh=window.innerHeight;
+  const aw=full?vw:document.body.clientWidth-32, ah=full?vh:document.body.clientHeight-(getComputedStyle(hint).display==='none'?16:hint.offsetHeight+24);
   let w=Math.max(200,Math.min(aw,ah*16/9)); wrapEl.style.width=Math.floor(w)+'px'; wrapEl.style.height=Math.floor(w*9/16)+'px'; }
 addEventListener('resize',fit); fit();
 toTitle(); ui.focus(); requestAnimationFrame(loop);
