@@ -598,13 +598,14 @@ const PAL={
   village:{g:['#5c9a3a','#4f8a32','#6dab45','#82bf52'],d:['#7a5338','#6a4630','#8a6242'],path:['#b39a74','#a38a64','#c4ab84'],stone:['#8d8678','#7a7366','#a39b8c'],flower:['#f2c14e','#ec8fb0','#fff','#9fd0ff']},
   meadow:{g:['#5b9e3e','#4a8a3a','#6eb04c','#9ccc64'],d:['#80583a','#6e4a30','#946a46'],path:['#bca37a','#ab926a','#cbb38a'],stone:['#968e80','#82796c','#aaa292'],flower:['#fff','#d9e6ff','#f6c8e0','#f2c14e']},
   ruins:{g:['#3a6656','#2f584a','#467862','#55907a'],d:['#3e3a4c','#34303f','#4a4558'],path:['#5a5a6e','#4e4e60','#686880'],stone:['#555a6e','#484c5e','#636a80'],flower:['#9fd8ff','#c8b8ff','#fff']},
+  twins:{g:['#2e3e5e','#26344e','#3a4c6e','#46597e'],d:['#24304a','#1c263c','#2e3c58'],path:['#2e3c5a','#26324c','#3a4a6a'],stone:['#34507e','#2a426a','#44649a'],flower:['#8ac8ff']},
   keep:{g:['#4a3a4e','#3e3042','#56465a','#62506a'],d:['#3a2f3b','#2e252f','#463a48'],path:['#4a3c4a','#3e323e','#5a4a5a'],stone:['#4a3e4e','#3e3442','#5a4c5e'],flower:['#ff8a6a']}
 };
 function makeTileTextures(biome){
   const P=PAL[biome], T={}, S=32;
   let [cv,c]=mkCanvas(S,S); R(c,0,0,S,S,P.g[0]); noiseFill(c,S,S,P.g,220,1);
   for(let i=0;i<10;i++){ const x=Math.floor(hash(i,7)*30), y=Math.floor(hash(7,i)*30); R(c,x,y,1,2,P.g[3]); R(c,x+1,y+1,1,1,P.g[1]); }
-  if(biome!=='keep') for(let i=0;i<3;i++){ const x=Math.floor(hash(i,19)*28)+2, y=Math.floor(hash(19,i)*28)+2; R(c,x,y,2,2,P.flower[i%P.flower.length]); R(c,x,y+2,1,1,P.g[1]); }
+  if(biome!=='keep'&&biome!=='twins') for(let i=0;i<3;i++){ const x=Math.floor(hash(i,19)*28)+2, y=Math.floor(hash(19,i)*28)+2; R(c,x,y,2,2,P.flower[i%P.flower.length]); R(c,x,y+2,1,1,P.g[1]); }
   T.grass=tex(cv,1);
   [cv,c]=mkCanvas(S,S); R(c,0,0,S,S,P.d[0]); noiseFill(c,S,S,P.d,160,2); for(let i=0;i<6;i++){ const x=Math.floor(hash(i,3)*28), y=Math.floor(hash(3,i)*28); R(c,x,y,4,3,P.stone[1]); R(c,x,y,4,1,P.stone[2]); }
   T.dirt=tex(cv,1);
@@ -1064,6 +1065,7 @@ const LOOKS={
   village:{hemi:[0x8a7ac8,0x4a3028,.62],sun:[0xff9060,1.35,[-14,9,10]],fog:[0xa8708c,50,300],exp:.95,bloom:[.85,.6,.72],tint:[1.07,.93,.93],sat:1.1,sky:['#2a2d66','#c06a86','#ffb27a'],sunDir:[-.6,.12,-1],sunCol:'#ffcf9a',sunSize:600},
   meadow:{hemi:[0xa8c4f0,0x4a3a28,.6],sun:[0xffd8a8,1.45,[-12,11,9]],fog:[0xb8c8e8,60,420],exp:.92,bloom:[.7,.65,.82],tint:[1.05,1,.94],sat:1.08,sky:['#3e78c8','#9cc4ec','#f8d8a8'],sunDir:[.5,.18,-1],sunCol:'#fff2d0',sunSize:900},
   ruins:{hemi:[0x5a6aa8,0x151525,.6],sun:[0x9fb8ff,.75,[10,16,6]],fog:[0x1a2244,30,240],exp:1.15,bloom:[1.0,.6,.6],tint:[.92,.98,1.1],sat:1.05,sky:['#05060f','#121a3a','#283260'],sunDir:[.4,.35,-1],sunCol:'#c8d8ff',sunSize:2000},
+  twins:{hemi:[0x5a7ac0,0x0a1428,.72],sun:[0x8ab4ff,.5,[0,14,-10]],fog:[0x050b1c,34,110],exp:1.18,bloom:[1.0,.5,.62],tint:[.92,.98,1.12],sat:1.08,sky:['#010309','#06102a','#0e1c44'],sunDir:[0,.3,-1],sunCol:'#5a8aff',sunSize:600},
   keep:{hemi:[0x8a4a6a,0x201018,.65],sun:[0xff8a6a,.55,[0,14,-10]],fog:[0x1a0a12,34,110],exp:1.15,bloom:[1.0,.5,.62],tint:[1.08,.94,.94],sat:1.05,sky:['#0a0306','#2a0810','#3a1018'],sunDir:[0,.3,-1],sunCol:'#ff5a4a',sunSize:600},
   lake:{hemi:[0x8a3a4a,0x1a0a10,.7],sun:[0xff4a3a,1.0,[4,14,-12]],fog:[0x3a0a14,40,200],exp:1.1,bloom:[1.1,.6,.55],tint:[1.12,.92,.92],sat:1.1,sky:['#12030a','#4a0a18','#8a1a22'],sunDir:[0,.35,-1],sunCol:'#ff3a2a',sunSize:500},
   space:{hemi:[0x223344,0x000000,.2],sun:[0xfff4e8,1.25,[30,10,20]],fog:[0x000000,4000,9000],exp:1.0,bloom:[1.0,.6,.78],tint:[1,1,1],sat:1.05,sky:['#000000','#020208','#000000'],sunDir:[.7,.1,.5],sunCol:'#ffffff',sunSize:4000},
@@ -1249,20 +1251,24 @@ const LEVELDEF={
     farPlane(G,texSmooth(kc),120,120,80,10,-220,{ro:-7});
     farPlane(G,ridgeTex(['#141a36','#1e2648'],3,4,0),700,140,20,-20,-180,{ro:-6});
     return G; },
-  twins(){ const G=newGrid(26,15,'keep'); G.tx=makeTileTextures('keep'); Object.assign(G,{key:'twins',look:'keep',music:null,name:"The Gatekeepers' Court",sub:'Before the gates of Kennel Keep',spawn:[3.2,9],cam:{y:5.4,z:15.5,up:1.1}});
+  twins(){ const G=newGrid(26,15,'twins'); G.tx=makeTileTextures('twins'); Object.assign(G,{key:'twins',look:'twins',music:null,name:"The Gatekeepers' Court",sub:'Before the gates of Kennel Keep',spawn:[3.2,9],cam:{y:5.4,z:15.5,up:1.1}});
     boxT(G,0,0,25,14,'flag'); boxH(G,0,0,25,3,6,'brick'); boxH(G,0,0,1,14,6,'brick'); boxH(G,24,0,25,14,6,'brick'); boxH(G,0,14,25,14,.6,'brick');
     blockB(G,0,0,25,3); blockB(G,0,0,1,14); blockB(G,24,0,25,14); blockB(G,0,14,25,14);
     for(let z=5;z<14;z++) for(let x=2;x<24;x++) if((x+z)%7===0) G.T[z][x]='cobble';
     buildTerrain(G,G.tx);
-    for(const [x,z] of [[3,5],[22.5,5],[3,13],[22.5,13],[12.5,5]]){ addBox(G,.9,1.1,.9,lam(G.tx.brick),x,0,z); G.B[Math.floor(z)][Math.floor(x)]=true; G.lightSrc.push({x,y:1.8,z,col:0xff7a3a,i:2.2,r:9,flick:1,fire:1}); }
+    // standing lanterns around the court and lamps hung on the back wall, all glowing cool blue
+    const blueLamp=(lamp)=>{ lamp.material.emissive.setHex(0x8ac8ff); const ls=G.lightSrc[G.lightSrc.length-1]; ls.col=0x7ab4ff; ls.i=2; ls.r=8; };
+    for(const [x,z] of [[2.6,6],[2.6,12.6],[9,13.2],[15.5,13.2],[22.6,6],[22.6,12.6],[9,5],[15.5,5]]){ blueLamp(addLantern(G,x,z)); G.B[Math.floor(z)][Math.floor(x)]=true; }
+    for(const x of [3,7,11,15]){ const y=3.4, m=new THREE.Mesh(new THREE.BoxGeometry(.36,.46,.36),new THREE.MeshLambertMaterial({color:0x1a2030,emissive:0x8ac8ff,emissiveIntensity:2.2})); m.position.set(x,y,4.25); G.root.add(m);
+      const br=new THREE.Mesh(new THREE.BoxGeometry(.08,.5,.36),solidMat(0x2d2a30)); br.position.set(x,y+.45,4.12); G.root.add(br); G.lightSrc.push({x,y,z:4.6,col:0x7ab4ff,i:1.6,r:7,flick:1}); }
     // the great gate of Kennel Keep looms behind the twins
     const [gc,gx]=mkCanvas(64,80); R(gx,0,0,64,80,'#1a1014'); for(let i=0;i<8;i++) R(gx,i*8,0,7,80,i%2?'#2a1a1e':'#24161a'); R(gx,0,18,64,4,'#8a6a2a'); R(gx,0,56,64,4,'#8a6a2a'); R(gx,30,0,4,80,'#0c0608');
     R(gx,22,34,8,8,'#c9a24a'); R(gx,34,34,8,8,'#c9a24a'); gx.fillStyle='#0a0406'; gx.beginPath(); gx.arc(32,0,32,0,Math.PI); gx.fill();
     const gate=new THREE.Mesh(new THREE.PlaneGeometry(6.4,8),new THREE.MeshLambertMaterial({map:tex(gc)})); gate.position.set(19.6,4,4.03); G.root.add(gate);
-    const [bc,bx]=mkCanvas(32,64); R(bx,0,0,32,64,'#3a1450'); R(bx,0,0,32,3,'#c9a24a'); R(bx,8,18,16,16,'#e8e4f0'); R(bx,12,22,8,8,'#3a1450'); for(let i=0;i<8;i++) R(bx,i*4,58+(i%2)*3,4,6,'#3a1450');
-    for(const x of [4.5,8,11.5]){ const b=new THREE.Mesh(new THREE.PlaneGeometry(1.4,2.8),new THREE.MeshLambertMaterial({map:tex(bc),transparent:true,alphaTest:.5})); b.position.set(x,3.8,4.02); G.root.add(b); }
+    const [bc,bx]=mkCanvas(32,64); R(bx,0,0,32,64,'#14306a'); R(bx,0,0,32,3,'#c9d8ff'); R(bx,8,18,16,16,'#e8eeff'); R(bx,12,22,8,8,'#14306a'); for(let i=0;i<8;i++) R(bx,i*4,58+(i%2)*3,4,6,'#14306a');
+    for(const x of [5,9,13]){ const b=new THREE.Mesh(new THREE.PlaneGeometry(1.4,2.8),new THREE.MeshLambertMaterial({map:tex(bc),transparent:true,alphaTest:.5})); b.position.set(x,3.8,4.02); G.root.add(b); }
     G.arena={x0:2.2,x1:16.5,z0:4.8,z1:13.3};
-    G.root.add(skyDome(LOOKS.keep.sky,LOOKS.keep.sunDir,LOOKS.keep.sunCol,LOOKS.keep.sunSize));
+    G.root.add(skyDome(LOOKS.twins.sky,LOOKS.twins.sunDir,LOOKS.twins.sunCol,LOOKS.twins.sunSize)); stars(G,700,0xbcd4ff,1.4);
     return G; },
   keep(){ const G=newGrid(20,17,'keep'); G.tx=makeTileTextures('keep'); Object.assign(G,{key:'keep',look:'keep',music:null,name:'Kennel Keep',sub:'Throne of the Hound Lord',spawn:[10,14.4]});
     boxT(G,0,0,19,16,'flag'); boxH(G,0,0,19,3,6,'brick'); boxH(G,0,0,1,16,6,'brick'); boxH(G,18,0,19,16,6,'brick'); boxH(G,0,16,19,16,.6,'brick'); blockB(G,0,0,19,3); blockB(G,0,0,1,16); blockB(G,18,0,19,16); blockB(G,0,16,19,16);
