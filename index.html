@@ -1468,7 +1468,10 @@ function updateBolts(dt){ const P=Player, B=Game.boss;
       if(!b.dead&&B&&B.hp>0&&Math.hypot(B.x-b.x,B.z-b.z)<1.3&&b.y<B.y+4.2){ b.dead=1; if(B.inv){ Sound.sfx('block'); FX.spark(b.x,b.y,b.z); } else { damageBoss(b.dmg); Sound.sfx('hit'); shake(.25); if(B.hp>0) stagger(B,b.kind==='orb'?1.2:.6); } } } }
   BOLTS=BOLTS.filter(b=>{ if(b.dead){ scene.remove(b.m); return false; } return true; }); }
 function spawnWave(A){ const w=A.waves[A.wi++]; A.gap=1.2; Game.banner={name:'Wave '+A.wi+' of '+A.waves.length,sub:'',t:0,small:1}; const b=A.lock;
-  w.forEach((type,i)=>{ const left=i%2===0; const x=left?b.x0+.6:b.x1-.6, z=lerp(b.z0+1,b.z1-1,(i*.37)%1); const m=makeMob(type,x,z); m.state='chase'; m.y+=4; m.vy=-2; m.cd=rnd(.8,1.6)+i*.3; MOBS.push(m); FX.burst(x,m.y-3,z,20,0x2a2030,4,.35,false); }); }
+  const P=Player, a0=rnd(0,6.28);
+  w.forEach((type,i)=>{ let x=P.x, z=P.z; for(let tries=0;tries<12;tries++){ const a=a0+i*(6.283/w.length)+rnd(-.35,.35)+tries*.5, r=(type==='hound'?3.6:5.2)+rnd(0,1.2);
+      x=clamp(P.x+Math.cos(a)*r,b.x0+.6,b.x1-.6); z=clamp(P.z+Math.sin(a)*r,b.z0+.6,b.z1-.6); const h=cellH(x,z); if(h<50&&h>-50&&Math.abs(h-P.y)<1.2&&Math.hypot(x-P.x,z-P.z)>2.6) break; }
+    const m=makeMob(type,x,z); m.state='chase'; m.y+=4; m.vy=-2; m.cd=rnd(.8,1.6)+i*.3; MOBS.push(m); FX.burst(x,m.y-3,z,20,0x2a2030,4,.35,false); }); }
 
 // ---------- villagers: wandering, panic, death ----------
 function updateNPC(n,dt){ n.t+=dt; n.flash=Math.max(0,(n.flash||0)-dt); let vx=0,vz=0;
