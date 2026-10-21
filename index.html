@@ -430,6 +430,10 @@ function outlinePass(c,w,h,col){
   id.data.set(o); c.putImageData(id,0,0);
 }
 const OUT=[18,12,26];
+// ART BIBLE: no orphan pixels; a lone opaque pixel with no 4-neighbours is noise, not detail
+function removeOrphans(c,w,h){ const im=c.getImageData(0,0,w,h), d=im.data, a=(x,y)=>x>=0&&y>=0&&x<w&&y<h&&d[(y*w+x)*4+3]>40; const kill=[];
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++) if(a(x,y)&&!a(x-1,y)&&!a(x+1,y)&&!a(x,y-1)&&!a(x,y+1)) kill.push((y*w+x)*4+3);
+  for(const i of kill) d[i]=0; c.putImageData(im,0,0); }
 
 function SH(c,cx,by,f){ return (dx,dy,w,h,col)=>{ c.fillStyle=col; c.fillRect(f>0?cx+dx:cx-dx-w, by+dy, w, h); }; }
 function blade(c,x0,y0,ang,len,f,cols){ const ex=x0+Math.cos(ang)*len*f, ey=y0+Math.sin(ang)*len;
@@ -652,15 +656,18 @@ function treeSprite(kind,seed){
       [[cx,44,28],[cx-24,56,20],[cx+24,54,21],[cx-12,30,18],[cx+14,30,18],[cx,62,20]].forEach(([x,y,r],i)=>blob(x,y,r,i));
       noiseFill(c,W2,H2-40,[cols[3],cols[0]],90,seed); }
     else { pline(c,cx-16,H2-62,cx-26,H2-80,'#4a3226',2); pline(c,cx+14,H2-66,cx+24,H2-88,'#4a3226',2); } }
-  outlinePass(c,W2,H2,[10,16,14]); return cv; }
+  removeOrphans(c,W2,H2); outlinePass(c,W2,H2,[10,16,14]); return cv; }
 function tuftSprite(cols,kind){ const [cv,c]=mkCanvas(16,16);
   if(kind==='lily'){ for(let i=0;i<3;i++){ const x=3+i*5, h=6+(i%2)*4, y=15-h; R(c,x,y,1,h,'#3e6a5a'); R(c,x-1,y-1,3,1,cols[0]); R(c,x,y-2,1,3,cols[1]); R(c,x-2,y,1,1,cols[0]); R(c,x+2,y,1,1,cols[0]); R(c,x,y-1,1,1,'#fff6c8'); } }
   else if(kind==='flower'){ for(let i=0;i<4;i++){ const x=2+i*4, h=6+(i%2)*4; R(c,x,16-h,1,h,'#3e7a2c'); R(c,x-1,15-h,3,2,cols[i%cols.length]); R(c,x,15-h,1,1,'#fff6c8'); } }
   else if(kind==='fern'){ for(let i=0;i<5;i++) pline(c,8,15,2+i*3,4+Math.abs(2-i)*2,cols[i%2],1); }
   else { for(let i=0;i<7;i++){ const x=1+i*2, h=5+Math.floor(hash(i,kind==='tall'?3:1)*(kind==='tall'?10:6)); pline(c,x,15,x+(i%2?1:-1),15-h,cols[i%cols.length]); } }
   return cv; }
-function glowTex(){ const cv=document.createElement('canvas'); cv.width=cv.height=64; const c=cv.getContext('2d'); const g=c.createRadialGradient(32,32,0,32,32,32);
-  g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(.25,'rgba(255,255,255,.6)'); g.addColorStop(1,'rgba(255,255,255,0)'); c.fillStyle=g; c.fillRect(0,0,64,64); return texSmooth(cv); }
+// ART BIBLE: glows are stepped, dithered pixel halos (4 bands), never smooth gradients
+function glowTex(){ const S=24, [cv,c]=mkCanvas(S,S), B=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
+  for(let y=0;y<S;y++) for(let x=0;x<S;x++){ const r=Math.hypot(x+.5-S/2,y+.5-S/2)/(S/2); if(r>1) continue; const v=Math.pow(1-r,1.6)*1.15+(B[(y&3)*4+(x&3)]/16-.5)*.18;
+    const a=v>.7?1:v>.42?.6:v>.2?.3:v>.06?.12:0; if(a) { c.fillStyle=`rgba(255,255,255,${a})`; c.fillRect(x,y,1,1); } }
+  return tex(cv); }
 function crescentTex(){ const S=256, cv=document.createElement('canvas'); cv.width=cv.height=S; const c=cv.getContext('2d');
   const shape=(ox,r1,r2)=>{ c.beginPath(); c.arc(S*.38,S/2,r1,-1.25,1.25); c.arc(S*.38-ox,S/2,r2,1.12,-1.12,true); c.closePath(); };
   c.shadowColor='rgba(255,40,70,1)'; c.shadowBlur=26; shape(34,112,104); c.fillStyle='#ff2a4a'; c.fill(); c.shadowBlur=0;
@@ -704,7 +711,7 @@ function drawGib(c,cx,by,k,v){ const cy=by-9, B='#8a0010', BD='#4a0008';
 function bushSprite(seed,cols){ const [cv,c]=mkCanvas(48,32); cols=cols||['#2f6a35','#3f8a42','#5aa64e','#86c866'];
   [[24,20,14],[12,22,10],[36,22,10],[18,14,9],[30,14,9]].forEach(([x,y,r])=>{ ell(c,x,y,r,r*.75,cols[0]); ell(c,x-2,y-2,r*.75,r*.5,cols[1]); ell(c,x-3,y-4,r*.4,r*.28,cols[2]); });
   noiseFill(c,48,30,[cols[3],cols[0]],50,seed); if(seed%2){ for(let i=0;i<6;i++) R(c,6+hash(i,seed)*36,8+hash(seed,i)*16,2,2,['#f4b6cc','#fff','#f2c14e'][i%3]); }
-  outlinePass(c,48,32,[10,20,12]); return cv; }
+  removeOrphans(c,48,32); outlinePass(c,48,32,[10,20,12]); return cv; }
 function catSkeletonTex(o){ const W2=1024,H2=512,cv=document.createElement('canvas'); cv.width=W2; cv.height=H2; const c=cv.getContext('2d');
   const B=o.bone, S=o.shade, D=o.dark, lc='round';
   const bone=(pts,w)=>{ c.lineCap=lc; c.lineJoin=lc; c.strokeStyle=D; c.lineWidth=w+5; c.beginPath(); pts.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y)); c.stroke();
@@ -907,10 +914,10 @@ const PITCH=Math.atan2(CAM_OFF.y,CAM_OFF.z);
 const composer=new THREE.EffectComposer(renderer); composer.setSize(RW,RH);
 composer.addPass(new THREE.RenderPass(scene,camera));
 const bloom=new THREE.UnrealBloomPass(new THREE.Vector2(RW/2,RH/2),.8,.55,.8); composer.addPass(bloom);
-const TiltShader={uniforms:{tDiffuse:{value:null},dir:{value:new THREE.Vector2(1/RW,0)},amount:{value:1.5},focus:{value:.48},band:{value:.2}},
+const TiltShader={uniforms:{tDiffuse:{value:null},dir:{value:new THREE.Vector2(1/RW,0)},amount:{value:.55},focus:{value:.48},band:{value:.3}},
   vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
   fragmentShader:`uniform sampler2D tDiffuse;uniform vec2 dir;uniform float amount,focus,band;varying vec2 vUv;
-  void main(){ float d=max(0.,abs(vUv.y-focus)-band); float r=clamp(d*amount*6.,0.,2.6);
+  void main(){ float d=max(0.,abs(vUv.y-focus)-band); float r=clamp(d*amount*6.,0.,1.25);
     vec4 s=texture2D(tDiffuse,vUv)*.2270270270;
     s+=texture2D(tDiffuse,vUv+dir*r*1.3846153846)*.3162162162; s+=texture2D(tDiffuse,vUv-dir*r*1.3846153846)*.3162162162;
     s+=texture2D(tDiffuse,vUv+dir*r*3.2307692308)*.0702702703; s+=texture2D(tDiffuse,vUv-dir*r*3.2307692308)*.0702702703; gl_FragColor=s; }`};
@@ -964,19 +971,28 @@ function buildTerrain(G,TX){
 
 // ---------- billboards ----------
 const TILT=-PITCH*.55;
+// ART BIBLE: one texel = 1/PPU world units for every sprite in the gameplay layer; colossal set pieces use exactly 2x texels
+const PPU=32, PPU_COLOSSAL=16;
+const BAYER4=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
+function pixelizeCanvas(cv,levels){ cv._px=1; const c=cv.getContext('2d'), w=cv.width, h=cv.height, im=c.getImageData(0,0,w,h), d=im.data, q=255/levels;
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const i=(y*w+x)*4; if(d[i+3]===0) continue; const b=(BAYER4[(y&3)*4+(x&3)]/16-.5)*q*.8;
+    for(let k=0;k<3;k++) d[i+k]=Math.max(0,Math.min(255,Math.round((d[i+k]+b)/q)*q)); d[i+3]=d[i+3]<96?0:d[i+3]<200?160:255; }
+  c.putImageData(im,0,0); }
+function pxShadowTex(){ const [cv,c]=mkCanvas(16,8); c.fillStyle='rgba(0,0,0,1)'; [[5,0,6],[2,1,12],[1,2,14],[0,3,16],[0,4,16],[1,5,14],[2,6,12],[5,7,6]].forEach(([x,y,w])=>c.fillRect(x,y,w,1)); return tex(cv); }
+let PX_SHADOW=null;
 function billboard(cv,wu,hu,opts){ opts=opts||{}; const t=tex(cv); const geo=new THREE.PlaneGeometry(wu,hu); geo.translate(0,hu/2-(opts.foot||0),0);
   const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({map:t,alphaTest:.5,side:THREE.DoubleSide,emissive:opts.emissive||0x000000,emissiveIntensity:opts.ei||0}));
   m.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:t,alphaTest:.5});
   m.castShadow=opts.shadow!==false; m.receiveShadow=false; m.rotation.x=opts.tilt!=null?opts.tilt:TILT*.5; return m; }
 const TREE_CACHE={};
 function addTree(G,x,z,kind,s){ const key=kind+(Math.floor(hash(x,z)*3)); const cv=TREE_CACHE[key]||(TREE_CACHE[key]=treeSprite(kind,Math.floor(hash(x,z)*3)));
-  s=s||1; const m=billboard(cv,cv.width/32*s*1.3,cv.height/32*s*1.3,{foot:.1}); m.position.set(x,groundY(x,z),z); G.root.add(m); return m; }
+  const m=billboard(cv,cv.width/PPU,cv.height/PPU,{foot:.1}); m.position.set(x,groundY(x,z),z); G.root.add(m); return m; }
 function scatterTufts(G,n,kinds,area,pred){ // instanced camera-facing tufts
-  for(const kd of kinds){ const cv=tuftSprite(kd.cols,kd.kind), t=tex(cv); const geo=new THREE.PlaneGeometry(.6*kd.s,.6*kd.s); geo.translate(0,.3*kd.s-.02,0);
+  for(const kd of kinds){ const cv=tuftSprite(kd.cols,kd.kind), t=tex(cv), ts=cv.width/PPU; const geo=new THREE.PlaneGeometry(ts,ts); geo.translate(0,ts/2-.02,0);
     const mat=new THREE.MeshLambertMaterial({map:t,alphaTest:.5,side:THREE.DoubleSide,emissive:kd.glow||0,emissiveIntensity:kd.glow?.6:0});
     const im=new THREE.InstancedMesh(geo,mat,kd.n); const o=new THREE.Object3D(); let c=0;
     for(let i=0;i<kd.n*6&&c<kd.n;i++){ const x=area[0]+Math.random()*(area[2]-area[0]), z=area[1]+Math.random()*(area[3]-area[1]); const tt=cellT(x,z), h=cellH(x,z);
-      if(h>500||h<-50||!(pred?pred(tt,x,z):tt==='grass')) continue; o.position.set(x,h,z); o.rotation.set(TILT*.5,0,0); const sc=.7+Math.random()*.6; o.scale.set(sc*(Math.random()<.5?-1:1),sc,sc); o.updateMatrix(); im.setMatrixAt(c++,o.matrix); }
+      if(h>500||h<-50||!(pred?pred(tt,x,z):tt==='grass')) continue; o.position.set(x,h,z); o.rotation.set(TILT*.5,0,0); o.scale.set(Math.random()<.5?-1:1,1,1); o.updateMatrix(); im.setMatrixAt(c++,o.matrix); }
     im.count=c; im.receiveShadow=false; G.root.add(im); } }
 
 // ---------- props ----------
@@ -1028,9 +1044,11 @@ function skyDome(cols,sunDir,sunCol,sunSize){
   const m=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,uniforms:{top:{value:new THREE.Color(cols[0])},mid:{value:new THREE.Color(cols[1])},bot:{value:new THREE.Color(cols[2])},sd:{value:new THREE.Vector3(...sunDir).normalize()},sc:{value:new THREE.Color(sunCol)},ss:{value:sunSize}},
     vertexShader:'varying vec3 vD;void main(){vD=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
     fragmentShader:`uniform vec3 top,mid,bot,sc,sd;uniform float ss;varying vec3 vD; void main(){ float y=vD.y; vec3 c=y>0.08?mix(mid,top,smoothstep(.08,.6,y)):mix(bot,mid,smoothstep(-.15,.08,y));
-      float s=max(dot(vD,sd),0.); c+=sc*(pow(s,ss)*2.5+pow(s,8.)*.35); gl_FragColor=vec4(c,1.); }`});
+      float s=max(dot(vD,sd),0.); c+=sc*(pow(s,ss)*2.5+pow(s,8.)*.35);
+      vec2 g=floor(mod(gl_FragCoord.xy/2.,4.)); float b=mod(g.x*8.+g.y*4.+mod(g.x+g.y,2.)*2.+mod(g.y,2.)*1.,16.)/16.-.5;
+      c=floor(c*18.+b+.5)/18.; gl_FragColor=vec4(c,1.); }`});
   const s=new THREE.Mesh(new THREE.SphereGeometry(500,32,16),m); s.renderOrder=-10; return s; }
-function farPlane(G,t,w,h,x,y,z,opts){ opts=opts||{}; const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,fog:false,opacity:opts.op||1,blending:opts.add?THREE.AdditiveBlending:THREE.NormalBlending,color:opts.col||0xffffff}));
+function farPlane(G,t,w,h,x,y,z,opts){ opts=opts||{}; if(t&&t.image&&t.image.getContext&&!t.image._px){ pixelizeCanvas(t.image,24); t.needsUpdate=true; } const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,fog:false,opacity:opts.op||1,blending:opts.add?THREE.AdditiveBlending:THREE.NormalBlending,color:opts.col||0xffffff}));
   m.position.set(x,y,z); m.renderOrder=opts.ro||-5; if(opts.ry) m.rotation.y=opts.ry; G.root.add(m); return m; }
 function stars(G,n,col,size){ const geo=new THREE.BufferGeometry(), p=[]; for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, e=Math.random()*.9+.05; p.push(Math.cos(a)*Math.cos(e)*450,Math.sin(e)*450,Math.sin(a)*Math.cos(e)*450); }
   geo.setAttribute('position',new THREE.Float32BufferAttribute(p,3)); const pts=new THREE.Points(geo,new THREE.PointsMaterial({color:col,size:size||1.6,sizeAttenuation:false,fog:false,transparent:true,depthWrite:false}));
@@ -1073,19 +1091,19 @@ const LOOKS={
 };
 function applyLook(k){ const o=LOOKS[k]; LOOK=o; hemi.color.set(o.hemi[0]); hemi.groundColor.set(o.hemi[1]); hemi.intensity=o.hemi[2]; sun.color.set(o.sun[0]); sun.intensity=o.sun[1];
   scene.fog=new THREE.Fog(o.fog[0],o.fog[1],o.fog[2]); scene.background=new THREE.Color(o.fog[0]);
-  bloom.strength=o.bloom[0]; bloom.radius=o.bloom[1]; bloom.threshold=o.bloom[2]; grade.uniforms.exposure.value=o.exp; grade.uniforms.tint.value.set(...o.tint); grade.uniforms.sat.value=o.sat; }
+  bloom.strength=Math.min(.62,o.bloom[0]*.62); bloom.radius=Math.min(.4,o.bloom[1]); bloom.threshold=Math.max(.72,o.bloom[2]); grade.uniforms.exposure.value=o.exp; grade.uniforms.tint.value.set(...o.tint); grade.uniforms.sat.value=o.sat; }
 function updateLights(tx,tz,t){ const o=LOOK.sun[2]; sun.position.set(tx+o[0],o[1],tz+o[2]); sun.target.position.set(tx,0,tz);
   const srcs=(L?L.lightSrc:[]).map(s=>({s,d:(s.x-tx)**2+(s.z-tz)**2})).sort((a,b)=>a.d-b.d);
   ptPool.forEach((p,i)=>{ const e=srcs[i]; if(e&&e.d<400){ const s=e.s; p.position.set(s.x,s.y,s.z); p.color.setHex(s.col); p.distance=s.r; p.intensity=s.i*(s.flick?1-s.flick*.25*(1+Math.sin(t*11+s.x)*Math.sin(t*7.3+s.z)):1); } else p.intensity=0; }); }
 
 // ---------- character sprites ----------
 const SPRITES=[];
-class Sprite3D{ constructor(w,h,unit){ unit=unit||32; [this.cv,this.c]=mkCanvas(w,h); this.w=w; this.h=h; this.t=tex(this.cv);
+class Sprite3D{ constructor(w,h,unit){ unit=(unit&&unit<=20)?PPU_COLOSSAL:PPU; [this.cv,this.c]=mkCanvas(w,h); this.w=w; this.h=h; this.t=tex(this.cv);
     const geo=new THREE.PlaneGeometry(w/unit,h/unit); geo.translate(0,h/unit/2-2/unit,0);
     this.mesh=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({map:this.t,alphaTest:.5,side:THREE.DoubleSide,emissive:0xffffff,emissiveIntensity:0,emissiveMap:this.t}));
     this.mesh.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:this.t,alphaTest:.5});
     this.mesh.castShadow=true; this.mesh.rotation.x=TILT;
-    const sh=new THREE.Mesh(new THREE.CircleGeometry(w/unit*.22,16),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.35,depthWrite:false})); sh.rotation.x=-Math.PI/2; this.shadow=sh;
+    PX_SHADOW=PX_SHADOW||pxShadowTex(); const sw=Math.max(.5,w/unit*.44); const sh=new THREE.Mesh(new THREE.PlaneGeometry(sw,sw*.5),new THREE.MeshBasicMaterial({map:PX_SHADOW,transparent:true,opacity:.38,depthWrite:false})); sh.rotation.x=-Math.PI/2; this.shadow=sh;
     scene.add(this.mesh); scene.add(sh); SPRITES.push(this); }
   draw(fn,outline){ this.c.clearRect(0,0,this.w,this.h); fn(this.c,this.w/2,this.h-2); if(outline!==false) outlinePass(this.c,this.w,this.h,OUT); this.t.needsUpdate=true; }
   place(x,y,z,gy){ this.mesh.position.set(x,y,z); this.shadow.position.set(x,(gy!=null?gy:y)+.02,z); const s=clamp(1-(y-(gy!=null?gy:y))*.15,.4,1); this.shadow.scale.set(s,s,s); }
@@ -1099,12 +1117,12 @@ const FX=(function(){
   geo.setAttribute('position',new THREE.BufferAttribute(pos,3)); geo.setAttribute('color',new THREE.BufferAttribute(col,3)); geo.setAttribute('size',new THREE.BufferAttribute(size,1));
   const mk=(add)=>new THREE.ShaderMaterial({uniforms:{map:{value:GLOW}},transparent:true,depthWrite:false,blending:add?THREE.AdditiveBlending:THREE.NormalBlending,vertexColors:true,
     vertexShader:'attribute float size;varying vec3 vC;void main(){vC=color;vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=size*(600./-mv.z);gl_Position=projectionMatrix*mv;}',
-    fragmentShader:'uniform sampler2D map;varying vec3 vC;void main(){vec4 t=texture2D(map,gl_PointCoord);gl_FragColor=vec4(vC,1.)*t;}'});
+    fragmentShader:'uniform sampler2D map;varying vec3 vC;void main(){ vec2 q=floor(gl_PointCoord*5.)-2.; float m=abs(q.x)+abs(q.y); if(m>2.) discard; gl_FragColor=vec4(vC*(m<1.?1.:m<2.?.55:.22),1.);}'});
   const ptsA=new THREE.Points(geo,mk(true)); ptsA.frustumCulled=false; scene.add(ptsA);
   const geo2=new THREE.BufferGeometry(), pos2=new Float32Array(MAX*3), col2=new Float32Array(MAX*3), size2=new Float32Array(MAX);
   geo2.setAttribute('position',new THREE.BufferAttribute(pos2,3)); geo2.setAttribute('color',new THREE.BufferAttribute(col2,3)); geo2.setAttribute('size',new THREE.BufferAttribute(size2,1));
   const m2=new THREE.ShaderMaterial({transparent:true,depthWrite:false,vertexColors:true,vertexShader:'attribute float size;varying vec3 vC;void main(){vC=color;vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=size*(600./-mv.z);gl_Position=projectionMatrix*mv;}',
-    fragmentShader:'varying vec3 vC;void main(){ vec2 d=gl_PointCoord-.5; if(dot(d,d)>.25) discard; gl_FragColor=vec4(vC,1.);}'});
+    fragmentShader:'varying vec3 vC;void main(){ vec2 q=floor(gl_PointCoord*4.); if((q.x==0.||q.x==3.)&&(q.y==0.||q.y==3.)) discard; float e=(q.x==0.||q.y==3.)?.72:1.; gl_FragColor=vec4(vC*e,1.);}'});
   const ptsB=new THREE.Points(geo2,m2); ptsB.frustumCulled=false; scene.add(ptsB);
   const P=[]; const tmp=new THREE.Color();
   const meshes=[];
