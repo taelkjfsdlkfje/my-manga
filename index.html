@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Moonsinger"><title>Moonsinger</title><style>[hidden]{display:none!important}</style></head><body>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Moonsinger"><title>Moonsinger</title><style>[hidden]{display:none!important}</style></head><body>
 <title>The Moonsinger's Bell</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,6 +71,8 @@ body.pseudofs #hint,body.isfull #hint{display:none}
 @media (orientation:portrait){ body.touch:not(.portraitok) #rotate{display:flex} }
 @media (pointer:coarse){#hint{display:none}}
 body.mech #tbJump{display:none!important}
+html{touch-action:none;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+[hidden]{display:none!important}
 </style>
 
 <div id="wrap">
@@ -3521,6 +3523,17 @@ Game.gibs=[]; CROSS=crossTex(); (function(){ const b=document.getElementById('un
     if(!armT){ armT=setTimeout(disarm,3000); b.classList.add('armed'); b.textContent='Tap again to restart'; Sound.sfx('blip'); return; }
     clearTimeout(armT); disarm(); Sound.sfx('select'); unstuck(); ui.focus(); });
   setInterval(()=>{ b.hidden=Game.state==='title'||Game.state==='end'; },250); })();
+// iOS Safari ignores user-scalable=no: block pinch, double-tap zoom, and snap back if zoom slips through
+(function(){ const stop=e=>e.preventDefault();
+  for(const ev of ['gesturestart','gesturechange','gestureend']) document.addEventListener(ev,stop,{passive:false});
+  document.addEventListener('touchmove',e=>{ if(e.touches.length>1||(e.scale&&e.scale!==1)) e.preventDefault(); },{passive:false});
+  let lastEnd=0; document.addEventListener('touchend',e=>{ const now=performance.now(), btn=e.target.closest&&e.target.closest('button');
+    if(now-lastEnd<350&&!btn) e.preventDefault(); lastEnd=now; },{passive:false});
+  document.addEventListener('dblclick',stop,{passive:false});
+  let vm=document.querySelector('meta[name=viewport]'); if(!vm){ vm=document.createElement('meta'); vm.name='viewport'; document.head.appendChild(vm); } const base='width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover';
+  if(vm) vm.setAttribute('content',base);
+  const vv=window.visualViewport; if(vv&&vm) vv.addEventListener('resize',()=>{ if(vv.scale>1.01){ vm.setAttribute('content',base.replace('maximum-scale=1','maximum-scale=1.01')); setTimeout(()=>{ vm.setAttribute('content',base); window.scrollTo(0,0); fit(); },60); } });
+})();
 toTitle(); ui.focus(); requestAnimationFrame(loop);
 </script>
 
