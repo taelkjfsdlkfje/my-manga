@@ -2775,14 +2775,15 @@ function enterMech(){ exitMech(true); loadLevel('void'); Game.banner=null; Playe
   const H=5.6, W=H*447/484; NAT.W=W; NAT.H=H;
   NAT.mat=new THREE.MeshBasicMaterial({map:MECHTEX,transparent:true,alphaTest:.5,depthWrite:false,fog:false,color:0xffffff}); NAT.mesh=mechPlane(W,H,NAT.mat); NAT.mesh.renderOrder=4;
   NAT.thr=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0x3ff4ff,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true})); scene.add(NAT.thr);
-  NAT.coreMk=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffffff,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true,opacity:.9})); NAT.coreMk.scale.set(.7,.7,1); NAT.coreMk.renderOrder=6; scene.add(NAT.coreMk);
+  NAT.coreMk=new THREE.Sprite(new THREE.SpriteMaterial({map:hitboxTex(0),depthWrite:false,depthTest:false,transparent:true})); NAT.coreMk.renderOrder=20; scene.add(NAT.coreMk);
+  NAT.coreRing=new THREE.Sprite(new THREE.SpriteMaterial({map:hitboxTex(1),depthWrite:false,depthTest:false,transparent:true})); NAT.coreRing.renderOrder=19; scene.add(NAT.coreRing);
   MB.layE=bulletLayer(1600,false); MB.layP=bulletLayer(400,true);
   camera.fov=50; camera.updateProjectionMatrix(); tiltH.enabled=tiltV.enabled=false;
   const g=document.getElementById('tbGuard'); if(g){ g.setAttribute('aria-label','Shoot, hold to charge'); g.dataset.orig=g.dataset.orig||g.innerHTML; g.innerHTML='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg>'; }
   document.body.classList.add('mech'); }
 function clearMechFire(){ MB.eb=[]; MB.las.forEach(l=>{ scene.remove(l.mw); scene.remove(l.mb); scene.remove(l.mc); }); MB.las=[]; MB.mn.forEach(m=>scene.remove(m.mesh)); MB.mn=[]; MB.big.forEach(b=>scene.remove(b.m)); MB.big=[]; MB.pb=[]; }
 function exitMech(quiet){ if(!Game.mech&&!NAT) return; clearMechFire(); MB.gh.forEach(g=>scene.remove(g.m)); MB.gh=[];
-  if(NAT){ [NAT.mesh,NAT.thr,NAT.coreMk].forEach(m=>m&&scene.remove(m)); } if(MB.layE){ MB.layE.dispose(); MB.layP.dispose(); MB.layE=MB.layP=null; }
+  if(NAT){ [NAT.mesh,NAT.thr,NAT.coreMk,NAT.coreRing].forEach(m=>m&&scene.remove(m)); } if(MB.layE){ MB.layE.dispose(); MB.layP.dispose(); MB.layE=MB.layP=null; }
   if(MB.marks) MB.marks.forEach(m=>scene.remove(m)); MB.marks=[];
   NAT=null; Game.mech=null; camera.fov=27; camera.updateProjectionMatrix(); tiltH.enabled=tiltV.enabled=true; Player.hidden=false;
   const g=document.getElementById('tbGuard'); if(g&&g.dataset.orig){ g.innerHTML=g.dataset.orig; g.setAttribute('aria-label','Guard, tap as a hit lands to parry'); } document.body.classList.remove('mech'); }
@@ -2842,7 +2843,16 @@ function placeNat(){ const N=NAT; if(!N) return; if(MECHTEX&&!N.mat.map){ N.mat.
   N.mesh.visible=!!N.show&&!blink&&!!MECHTEX; N.mesh.position.set(N.x-.75,N.y-.6+Math.sin(N.t*2.2)*.12,N.z||0); N.mesh.rotation.z=N.tilt;
   N.mat.color.setRGB(N.flash>0?1:1,N.flash>0?.45:1,N.flash>0?.5:1);
   N.thr.visible=!!N.show; N.thr.position.set(N.x-1.9,N.y+.4,(N.z||0)-.1); const th=1.6+Math.sin(N.t*30)*.3+(N.qb>0?2:0); N.thr.scale.set(th*1.6,th,1);
-  N.coreMk.visible=!!N.show&&Game.mech&&Game.mech.st==='fight'; N.coreMk.position.set(N.x,N.y,.3); const cs=.55+Math.sin(N.t*8)*.08; N.coreMk.scale.set(cs,cs,1); }
+  const cv=!!N.show&&!!Game.mech&&Game.mech.st==='fight'; N.coreMk.visible=N.coreRing.visible=cv; N.coreMk.position.set(N.x,N.y,.3); N.coreRing.position.set(N.x,N.y,.29);
+  N.coreMk.scale.set(1.05,1.05,1); const ph=(N.t*1.6)%1, rs=1.1+ph*1.1; N.coreRing.scale.set(rs,rs,1); N.coreRing.material.opacity=(1-ph)*.85; }
+// ART: the pilot core hitbox. Lime with an ink outline, a colour no enemy shot or friendly effect uses. Fill radius matches the real hit radius (~0.34u).
+const HITBOX_TEX=[];
+function hitboxTex(k){ if(HITBOX_TEX[k]) return HITBOX_TEX[k]; const S=32,[cv,c]=mkCanvas(S,S), cx=S/2;
+  const disc=(r,col)=>{ c.fillStyle=col; for(let y=0;y<S;y++) for(let x=0;x<S;x++) if(Math.hypot(x+.5-cx,y+.5-cx)<=r) c.fillRect(x,y,1,1); };
+  const ring=(r0,r1,col)=>{ c.fillStyle=col; for(let y=0;y<S;y++) for(let x=0;x<S;x++){ const d=Math.hypot(x+.5-cx,y+.5-cx); if(d>=r0&&d<=r1) c.fillRect(x,y,1,1); } };
+  if(k===0){ disc(15.5,'#06140a'); disc(13.5,'#c6ff3a'); disc(11.5,'#7ae81a'); ring(13.5,15.5,'#06140a'); disc(4.5,'#ffffff'); disc(2.5,'#f8ffe0'); c.fillStyle='#e8ffb0'; c.fillRect(10,8,4,2); }
+  else { ring(13,15.5,'#06140a'); ring(13.6,14.9,'#c6ff3a'); }
+  const t=tex(cv); t.encoding=THREE.sRGBEncoding; HITBOX_TEX[k]=t; return t; }
 
 // ---------- projectiles ----------
 function eShot(x,y,vx,vy,col,r,o){ MB.eb.push(Object.assign({x,y,z:0,vx,vy,vz:0,col:col||0xff5a8a,r:r||.42,t:0},o||{})); }
