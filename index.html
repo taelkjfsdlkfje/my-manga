@@ -4027,7 +4027,9 @@ function nbBit(x,y,z){ const m=new THREE.Mesh(new THREE.ConeGeometry(.3,1,4),new
   const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0x3ff4ff,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true})); gl.scale.set(1.4,1.4,1); g.add(gl); g.position.set(x,y,z); scene.add(g); const b={m:g,x,y,z}; NBB.push(b); return b; }
 function nbKillBit(b){ scene.remove(b.m); const i=NBB.indexOf(b); if(i>=0) NBB.splice(i,1); FX.burst(b.x,b.y,b.z,8,0x9ff8ff,3,.2); }
 function nbShot(x,z,a,sp,col,o){ return spawnProj(Object.assign({kind:'orb',x,y:NB.y+1.6,z,vx:Math.cos(a)*sp,vz:Math.sin(a)*sp,col:col||0x3ff4ff,dmg:2,life:5,src:NB},o||{})); }
-function nbBoost(tx,tz){ const ox=NB.x, oz=NB.z; tx=clamp(tx,Game.arena.lock.x0+1,Game.arena.lock.x1-1); tz=clamp(tz,Game.arena.lock.z0+1,Game.arena.lock.z1-1);
+function nbArea(){ const P=Player; return {x0:P.x-12,x1:P.x+12,z0:P.z-8,z1:P.z+7}; }
+function nbSafe(tx,tz){ const P=Player; for(let k=0;k<8;k++){ const x=lerp(tx,P.x,k/8), z=lerp(tz,P.z,k/8); if(cellH(x,z)<500&&Math.abs(groundY(x,z)-P.y)<6) return [x,z]; } return [P.x,P.z]; }
+function nbBoost(tx,tz){ const ox=NB.x, oz=NB.z, A=nbArea(); tx=clamp(tx,A.x0+1,A.x1-1); tz=clamp(tz,A.z0+1,A.z1-1); [tx,tz]=nbSafe(tx,tz);
   for(let k=0;k<5;k++) FX.burst(lerp(ox,tx,k/5),NB.y+2,lerp(oz,tz,k/5),6,0x3ff4ff,3,.25); NB.ghost=.25; NB.gx=ox; NB.gz=oz; const d=NB.dsh; const fx=d?lerp(d.fx,d.tx,Math.min(1,d.t/d.d)):ox, fz=d?lerp(d.fz,d.tz,Math.min(1,d.t/d.d)):oz; NB.dsh={fx,fz,tx,tz,t:0,d:.085,gt:0}; NB.x=tx; NB.z=tz; Sound.sfx('quickboost'); shake(.12); }
 function sleep(s){ return s; }
 // ---------- attack patterns (generators yield seconds) ----------
@@ -4048,7 +4050,7 @@ function* nbMissiles(n){ Sound.sfx('charge'); for(let i=0;i<n;i++){ const a=Math
 function* nbSweep(){ const a0=Math.atan2(Player.z-NB.z,Player.x-NB.x), dir=Math.random()<.5?1:-1, ox=NB.x, oz=NB.z; Voice.bark('nbSweep');
   nbLaser({x0:ox,z0:oz,ang:t=>t<.9?a0-dir*1.1:a0-dir*1.1+dir*2.2*Math.min(1,(t-.9)/1.4),len:24,warn:.9,dur:1.4,w:1.7,dmg:3}); yield 2.5; }
 function* nbCurtain(waves){ for(let w=0;w<waves;w++){ const a=Math.atan2(Player.z-NB.z,Player.x-NB.x), gap=rnd(-.5,.5); for(let k=-9;k<=9;k++){ if(Math.abs(k*.13-gap)<.25) continue; nbShot(NB.x,NB.z,a+k*.13,8.5,w%2?0x9ff8ff:0x3ff4ff); } Sound.sfx('mechshot'); yield .45; } }
-function* nbGrid(rounds){ const A=Game.arena.lock; for(let r=0;r<rounds;r++){ const xs=[], zs=[]; for(let i=0;i<3;i++){ xs.push(rnd(A.x0+2,A.x1-2)); zs.push(rnd(A.z0+2,A.z1-2)); }
+function* nbGrid(rounds){ const A=nbArea(); for(let r=0;r<rounds;r++){ const xs=[], zs=[]; for(let i=0;i<3;i++){ xs.push(rnd(A.x0+2,A.x1-2)); zs.push(rnd(A.z0+2,A.z1-2)); }
     xs.push(Player.x); for(const x of xs) nbLaser({x0:x,z0:A.z0,x1:x,z1:A.z1,warn:.9,dur:.35,w:1.2,dmg:2}); for(const z of zs) nbLaser({x0:A.x0,z0:z,x1:A.x1,z1:z,warn:.9,dur:.35,w:1.2,dmg:2}); yield 1.25; } }
 const NB_POOL={1:['spiral','saber','missiles','curtain','bits','saber','spiral'],2:['bits','saber','sweep','spiral2','missiles','curtain','saber'],3:['bits2','saber3','sweep','grid','spiral3','missiles','saber3'],4:['bits2','saber3','sweep','grid','spiral3','curtain','missiles','saber3']};
 function nbPattern(k){ switch(k){ case 'spiral': return nbSpiral(4,2.6,6,1.2); case 'spiral2': return nbSpiral(5,2.8,7,-1.5); case 'spiral3': return nbSpiral(6,3,7.5,1.9);
@@ -4071,6 +4073,7 @@ function updateNB(dt){ if(!NB) return; const P=Player, play=Game.state==='play';
   // dodge incoming getsugas with a quickboost
   if(NB.dodgeCd<=0&&!NB.busyAtk){ for(const b of BEAMS){ if(b.ali&&Math.hypot(b.x-NB.x,b.z-NB.z)<3&&Math.random()<[0,.18,.24,.3,.36][NB.phase]){ const a=Math.atan2(b.dz,b.dx)+Math.PI/2*(Math.random()<.5?1:-1); nbBoost(NB.x+Math.cos(a)*4,NB.z+Math.sin(a)*4); NB.dodgeCd=.9; Game.dmgNums.push({x:NB.x,y:NB.y+4,z:NB.z,n:'MISS',t:0,col:'#9ff8ff'}); break; } } }
   if(NB.gen){ NB.busyAtk=1; NB.wait-=dt; while(NB.gen&&NB.wait<=0){ const r=NB.gen.next(); if(r.done){ NB.gen=null; NB.busyAtk=0; NB.cd=[0,.8,.6,.45,.35][NB.phase]; } else NB.wait+=r.value; } return; }
+  if(!NB.dsh&&(NB.leashCd=(NB.leashCd||0)-dt)<=0&&Math.hypot(P.x-NB.x,P.z-NB.z)>16){ NB.leashCd=.5; const a=Math.atan2(NB.z-P.z,NB.x-P.x); nbBoost(P.x+Math.cos(a)*rnd(6,8),P.z+Math.sin(a)*rnd(4,6)); }
   NB.cd-=dt; if(NB.cd<=0){ if(Math.random()<.55){ const a=rnd(0,6.28); nbBoost(P.x+Math.cos(a)*rnd(5,8),P.z+Math.sin(a)*rnd(4,6)); NB.cd=.12; return; }
     const pool=NB_POOL[NB.phase]; let k=pool[Math.floor(Math.random()*pool.length)]; if(k===NB.last) k=pool[Math.floor(Math.random()*pool.length)]; NB.last=k; NB.gen=nbPattern(k); NB.wait=0;
     if(Math.random()<.18) Voice.bark('nbTaunt'+(1+Math.floor(Math.random()*4))); } }
@@ -4095,8 +4098,8 @@ function nbClashRender(C,dt){ const P=Player, sx=P.x+.6*P.f, sy=P.y+1.3, sz=P.z,
   set(C.b[2],f.x,f.y,f.z,nx,ny,nz,nw); set(C.b[3],f.x,f.y,f.z,nx,ny,nz,nw*.92);
   // the Getsuga itself: a black-red crescent riding the tip
   if(!C.cr){ C.cr=new THREE.Group(); const m=new THREE.Mesh(new THREE.PlaneGeometry(3.4,3.4),new THREE.MeshBasicMaterial({map:CRESC,color:0x2a0610,transparent:true,depthWrite:false,side:THREE.DoubleSide,fog:false})), gl=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xff1a2a,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));
-    gl.scale.set(6,6,1); C.cr.add(gl); C.cr.add(m); C.cr.userData.temp=1; C.cr.userData.m=m; scene.add(C.cr); }
-  const cx=lerp(px,f.x,won), cy=lerp(py,f.y,won), cz=lerp(pz,f.z,won)+.3; C.cr.visible=!!C.cine; C.cr.position.set(cx,cy,cz); C.cr.userData.m.rotation.z=Math.atan2(f.y-sy,f.x-sx)*(P.f)+Math.sin(C.t*30)*.06-up*.5; C.cr.scale.setScalar(1+(C.cine?.4:0)+up*.3);
+    gl.scale.set(4.2,4.2,1); C.cr.add(gl); C.cr.add(m); C.cr.userData.temp=1; C.cr.userData.m=m; scene.add(C.cr); }
+  const cx=lerp(px,f.x,won), cy=lerp(py,f.y,won), cz=lerp(pz,f.z,won)+.3; C.cr.visible=!!C.cine; C.cr.position.set(cx,cy,cz); C.cr.userData.m.rotation.z=Math.atan2(f.y-sy,f.x-sx)*(P.f)+Math.sin(C.t*30)*.06-up*.5; C.cr.scale.setScalar(.85+(C.cine?.15:0)+up*.15);
   const n=C.cine?9:4; for(let i=0;i<n;i++){ const a=rnd(0,6.28); FX.spawn(cx,cy,cz,Math.cos(a)*rnd(3,9),rnd(-2,6)+up*8,Math.sin(a)*rnd(3,9),.35,i%3===0?0x2a0610:i%2?0xff3a4a:0x3ff4ff,.4,6,true); }
   if(up>0&&up<1&&Math.random()<.6) for(let i=0;i<3;i++){ const k=Math.random(); FX.spawn(lerp(cx,nx,k),lerp(cy,ny,k),lerp(cz,nz,k),rnd(-3,3),rnd(-1,4),rnd(-3,3),.4,0x9ff8ff,.5,0,true); }
   P.anim='beam'; P.beamPose=.1; }
@@ -4125,7 +4128,7 @@ function* nathanArrives(){ const P=Player, mi=Game.mira; Sound.stop(); Game.lett
   Sound.sfx('shatter'); Sound.sfx('crossboom'); shatterFrom(nightShardSrc(),UW/2,UH*.22); OV.cr=null; impactFrame([[3,3],[1,2],[2,2]]); Voice.bark('punch');
   yield tween(OV.fist,{s:11,y:0,r:-.15},.35,t=>1-Math.pow(1-t,3)); yield wait(.35); OV.fist=null; OV.white=.8; OV.wfade=1.4;
   // the mech descends into the flowers
-  const ax=P.x+5, az=P.z-1.5; nbMake(ax,az); NB.y=groundY(ax,az)+30; Game.arena={lock:{x0:P.x-12,x1:P.x+12,z0:P.z-8,z1:P.z+7}};
+  const ax=P.x+5, az=P.z-1.5; nbMake(ax,az); NB.y=groundY(ax,az)+30; Game.arena=null; Game.nbHome={x:P.x,z:P.z};
   cineSet(P.x-2,2,P.z+11,ax,6,az); Sound.sfx('quickboost'); Sound.sfx('beam');
   const dsc={on:1}; Game.fxUpd.push(()=>{ if(!dsc.on) return false; for(let i=0;i<3;i++) FX.spawn(NB.x+rnd(-1,1),NB.y+rnd(0,2),NB.z,0,8,0,.4,0x3ff4ff,.5,0,true); return true; });
   yield tween(NB,{y:groundY(ax,az)+1.4},1.1,t=>1-Math.pow(1-t,3)); dsc.on=0; Sound.sfx('slam'); shake(1); FX.ring(ax,groundY(ax,az)+.1,az,'#3ff4ff',6,.5); FX.burst(ax,groundY(ax,az)+.5,az,80,0xffffff,8,.5,false);
@@ -4151,10 +4154,10 @@ function* nathanArrives(){ const P=Player, mi=Game.mira; Sound.stop(); Game.lett
   evaCard(['ALI THE WANDERER','VS NATHAN THE NASTY'],2.6,1); Sound.sfx('slam'); yield wait(2.8);
   card('Nathan the Nasty','×1200'); yield wait(1.4);
   yield* nbBeginPhase(1); }
-function* nbBeginPhase(ph){ const P=Player; NB.phase=ph; NB.inv=false; NB.barShow=1; NB.cd=1; NB.gen=null; Game.state='play'; Game.letterTo=0; Cam.cine=null; Cam.zoom=1.18; Sound.play('diva'); Game.nbPhaseStart=ph; P.inv=1;
+function* nbBeginPhase(ph){ const P=Player; NB.phase=ph; NB.inv=false; NB.barShow=1; NB.cd=1; NB.gen=null; Game.state='play'; Game.letterTo=0; Cam.cine=null; Cam.zoom=1.36; Sound.play('diva'); Game.nbPhaseStart=ph; P.inv=1;
   if(ph>=3) NB.red=1; }
 function nbRespawn(){ if(!NB) return false; nbClear(); const ph=Game.nbPhaseStart||1; NB.bars=NB_PHASES[ph-1]; NB.hp=NB.bars; NB.alive=true; NB.inv=false; NB.barShow=1; NB.phase=ph;
-  const A=Game.arena.lock, cx=(A.x0+A.x1)/2, cz=(A.z0+A.z1)/2; resetPlayer({x:cx-6,z:cz},true); Player.hp=Player.maxHp; NB.x=cx+5; NB.z=cz; NB.red=ph>=3?1:0; NB.wound=ph>=3?1:0; NB.hov=1.4; NB.dsh=null; NB.glow.material.color.setHex(0x3ff4ff); NB.flash=0; Game.state='play'; Game.fade=1; Game.fadeTo=0; Cam.cine=null; Game.letterTo=0; Game.script=null; Game.dlg=null; Game.wait=null; JC.lines=[];
+  const H=Game.nbHome||{x:Player.x,z:Player.z}, cx=H.x, cz=H.z; resetPlayer({x:cx-6,z:cz},true); Cam.zoom=1.36; Player.hp=Player.maxHp; NB.x=cx+5; NB.z=cz; NB.red=ph>=3?1:0; NB.wound=ph>=3?1:0; NB.hov=1.4; NB.dsh=null; NB.glow.material.color.setHex(0x3ff4ff); NB.flash=0; Game.state='play'; Game.fade=1; Game.fadeTo=0; Cam.cine=null; Game.letterTo=0; Game.script=null; Game.dlg=null; Game.wait=null; JC.lines=[];
   Game.banner={name:['','Phase I','Phase II','Phase III','Final Phase'][ph],sub:'×'+NB.bars,t:0,small:1}; Sound.play('diva'); return true; }
 // ---------- phase cinematics + limit-cut mechanics ----------
 const NB_CINE={
@@ -4168,7 +4171,7 @@ const NB_CINE={
     yield say('ali',"Toys.");
     ring.done=1; bs.forEach(nbKillBit); Cam.cine=null; Game.letterTo=0; Game.state='play'; Sound.play('diva');
     Game.banner={name:'Requiem Grid',sub:'Nathan cannot be hurt. Teleport through the lasers. Survive.',t:0};
-    const A=Game.arena.lock, gen=(function*(){ for(let r=0;r<4;r++){ const step=r%2?2.6:3.2;
+    const A=nbArea(), gen=(function*(){ for(let r=0;r<4;r++){ const step=r%2?2.6:3.2;
         if(r%2===0) for(let x=A.x0+1+(r%4)*.8;x<A.x1;x+=step) nbLaser({x0:x,z0:A.z0,x1:x,z1:A.z1,warn:1,dur:.4,w:1.1,dmg:2});
         else for(let z=A.z0+1;z<A.z1;z+=step) nbLaser({x0:A.x0,z0:z,x1:A.x1,z1:z,warn:1,dur:.4,w:1.1,dmg:2});
         yield 1.1; for(let k=0;k<12;k++) nbShot(NB.x,NB.z,k/12*6.283+r*.2,6); yield .5; }
@@ -4199,19 +4202,19 @@ const NB_CINE={
     const C=NBC; Game.state='cut'; Game.banner=null; Game.letterTo=1; Sound.sfx('drone'); Sound.sfx('beam');
     const wob={on:1}; Game.fxUpd.push(()=>{ if(!wob.on||!NBC) return false; if(!C.push) C.meter=.6+Math.sin(C.t*9)*.035+Math.sin(C.t*23)*.015; if(Math.random()<.3) shake(.22); return true; });
     const mid=()=>{ const f=nbFace(); return {x:(P.x+f.x)/2,y:(P.y+1.3+f.y)/2,z:(P.z+f.z)/2}; };
-    let m=mid(); cineSet(m.x,m.y+.5,m.z+6.5,m.x,m.y,m.z); yield wait(1.3);
+    let m=mid(); cineSet(m.x,m.y+2.6,m.z+15,m.x,m.y+.6,m.z); yield wait(1.3);
     cineSet(NB.x-2.6,NB.y+2.4,NB.z+5,NB.x,NB.y+2.4,NB.z); yield say('nathan',"Why won't it break?! I burned a whole morning for this beam!",'angry');
     cineSet(P.x+1.6,P.y+1.4,P.z+4,P.x+.8,P.y+1.3,P.z); yield say('ali',"Your beam goes straight. My blade curves.");
-    m=mid(); cineSet(m.x-1,m.y+1,m.z+5.5,m.x,m.y+.8,m.z); yield wait(.9);
+    m=mid(); cineSet(m.x-1,m.y+3,m.z+15,m.x,m.y+1,m.z); yield wait(.9);
     C.push=1; Sound.sfx('skyopen'); Sound.sfx('tear'); impactFrame([[1,2],[2,2]]); shake(.9);
     yield tween(C,{meter:.74,up:1},1.1,t=>t*t*(3-2*t));
-    m=mid(); cineSet(m.x+2,m.y-.4,m.z+13,m.x,m.y+9,m.z-4); Sound.sfx('crossboom'); FX.flash=.4; grade.uniforms.flashCol.value.set(.7,.95,1); yield wait(.8);
-    cineSet(NB.x-5,NB.y+2,NB.z+8,NB.x,NB.y+2,NB.z); Sound.sfx('beam'); Sound.sfx('swing');
+    m=mid(); cineSet(m.x+1,m.y+1.5,m.z+28,m.x,m.y+7,m.z-4); Sound.sfx('crossboom'); FX.flash=.4; grade.uniforms.flashCol.value.set(.7,.95,1); yield wait(.8);
+    { const f=nbFace(); cineSet((P.x+f.x)/2,P.y+4.5,P.z+24,(P.x+f.x)/2,P.y+1.8,P.z); } Sound.sfx('beam'); Sound.sfx('swing');
     yield tween(C,{won:1},.3,t=>t*t);
     wob.on=0; endNBClash(); impactFrame([[3,3],[1,2],[2,2],[3,2]]); Sound.sfx('crossboom'); Sound.sfx('slam'); Sound.sfx('gore'); shake(1.6); FX.flash=.7; grade.uniforms.flashCol.value.set(1,.3,.35);
     FX.burst(NB.x,NB.y+2,NB.z,160,0xff3a4a,14,.55); FX.burst(NB.x,NB.y+2,NB.z,80,0x1a0a10,10,.5,false); FX.burst(NB.x,NB.y+2,NB.z,60,0x9aa4b8,9,.35,false); FX.ring(NB.x,NB.y+.2,NB.z,'#ff3a4a',9,.6);
     NB.flash=1.2; NB.wound=1; const dir=Math.sign(NB.x-P.x)||1; Game.dmgNums.push({x:NB.x,y:NB.y+4,z:NB.z,n:'CRITICAL',t:0,big:true,col:'#ff6a7a'});
-    yield tween(NB,{x:clamp(NB.x+dir*3.5,Game.arena.lock.x0+1,Game.arena.lock.x1-1),hov:.25},.35,t=>1-Math.pow(1-t,3));
+    yield tween(NB,{x:nbSafe(NB.x+dir*3.5,NB.z)[0],hov:.25},.35,t=>1-Math.pow(1-t,3));
     yield wait(.9); Game.letterTo=1; cineSet(NB.x-3,1.4,NB.z+6,NB.x,2.4,NB.z);
     yield say('nathan',"Gh...! It went straight through the core plating...!",'angry');
     yield say('nathan',"And how... how is your beam black AND red?!",'angry');
