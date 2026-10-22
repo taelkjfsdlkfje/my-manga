@@ -1522,7 +1522,7 @@ function moveBody(e,dt,step){ const r=e.r||.3;
   const gh=supportH(e.x,e.z,r*.8); e.y+=e.vy*dt;
   if(gh>-50&&gh<500&&e.y<=gh&&e.vy<=0&&e.y>gh-.7){ e.y=gh; e.vy=0; e.onGround=true; } else e.onGround=false;
 }
-function startAtk(n){ const P=Player; P.atk={t:0,n,hit:new Set(),q:false}; P.combo=n; Sound.sfx('swing'); P.charge=0;
+function startAtk(n){ const P=Player; P.atk={t:0,n,hit:new Set(),q:false}; P.combo=n; Sound.sfx('swing'); P.charge=0; if(!ALI()&&Game.flags.aliSword&&typeof NB!=='undefined'&&NB&&NB.alive){ P.swHits=(P.swHits||0)+1; if(P.swHits%3===0){ P.ang=Math.atan2(NB.z-P.z,NB.x-P.x); fireBeam(false,true,{}); if(performance.now()-(P.swBark||0)>2600){ P.swBark=performance.now(); Voice.bark('beam'); } } }
   const tgt=nearestFoe(3.2); if(tgt) P.ang=Math.atan2(tgt.z-P.z,tgt.x-P.x); FX.arc(P.x,P.y,P.z,P.ang,n,false);
   if(P.onGround&&!(Game.twins&&Game.twins.active)){ P.vx+=Math.cos(P.ang)*(n===2?4:2); P.vz+=Math.sin(P.ang)*(n===2?4:2); } }
 function nearestFoe(r){ let best=null,bd=r; for(const m of MOBS){ const d=Math.hypot(m.x-Player.x,m.z-Player.z); if(d<bd){bd=d;best=m;} } const b=Game.boss; if(b&&b.hp>0&&!b.inv){ const d=Math.hypot(b.x-Player.x,b.z-Player.z)-.8; if(d<bd){bd=d;best=b;} } return best; }
@@ -1532,7 +1532,6 @@ function meleeHits(x,z,y,rad,ang,arc,dmg,set){ let any=false;
   for(const m of MOBS){ if(m.hp<=0||set.has(m)||Math.abs(m.y-y)>1.6||!inArc(m.x,m.z,.3)) continue; set.add(m); any=true; damageMob(m,dmg,Math.atan2(m.z-z,m.x-x)); }
   const b=Game.boss; if(b&&b.hp>0&&!set.has(b)&&inArc(b.x,b.z,.9)){ set.add(b); any=true; damageBoss(dmg); }
   if(!ALI()&&typeof NB!=='undefined'&&NB&&NB.alive&&!set.has(NB)&&inArc(NB.x,NB.z,1.3)){ set.add(NB); any=true; const sw=Game.flags.aliSword; nbDamage(sw?7.5:.75); if(sw){ FX.burst(NB.x,NB.y+2,NB.z,14,0xff2a3a,5,.25); FX.burst(NB.x,NB.y+2,NB.z,8,0x0c0814,4,.25,false); } }
-  if(any&&!ALI()&&Game.flags.aliSword&&typeof NB!=='undefined'&&NB&&NB.alive){ Player.swHits=(Player.swHits||0)+1; if(Player.swHits%3===0){ Player.ang=Math.atan2(NB.z-Player.z,NB.x-Player.x); fireBeam(false,true,{}); if(performance.now()-(Player.swBark||0)>2600){ Player.swBark=performance.now(); Voice.bark('beam'); } } }
   for(const n of NPCS.slice()){ if(set.has(n)||Math.abs(n.y-y)>1.6||!inArc(n.x,n.z,.3)) continue; set.add(n); any=true; hitNPC(n,dmg,Math.atan2(n.z-z,n.x-x)); }
   if(propHits(x,z,y,rad,ang,arc,dmg,set)) any=true;
   const d=L.dummy; if(d&&!set.has(d)&&inArc(d.x,d.z,.3)){ set.add(d); any=true; d.flash=.25; d.hits++; FX.spark(d.x,d.y+1.1,d.z); }
