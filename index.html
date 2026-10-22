@@ -4417,19 +4417,21 @@ function* twentyYearsLater(){ const P=Player, aff=Game.aff, fl=Game.flags; loadL
 Object.assign(BARKS,{nbBits:['nathan',"Bits! Go!"],nbSweep:['nathan',"Soulburn sweep!"],nbTaunt1:['nathan',"Too slow, wanderer!"],nbTaunt2:['nathan',"I remember every way to kill you!"],nbTaunt3:['nathan',"Is that all the blade has taught you?"],nbTaunt4:['nathan',"Quickboost! Again!"]});
 
 // ---------- Paul: the hooded man who knows every shortcut ----------
-function* paulTalk(){ const fl=Game.flags;
+function* paulTalk(){
   yield say('paul',"Psst. Over here. Don't mind the hood.");
   yield say('paul',"I know a shortcut to every fight in every story. Whose road do you want?");
-  const r=yield choose([{t:"Shayan's road.",aff:0},{t:"Ali's road.",aff:0},{t:"Something weird.",aff:0}]);
-  if(r===2){ const w=yield choose([{t:"Shayan: Nathan the Nasty (wrong route)",aff:0},{t:"Never mind.",aff:0}]);
-    if(w!==0){ yield say('paul',"Suit yourself. I'll be around. Probably."); return; }
-    yield say('paul',"Shayan versus Nathan? That fight was never supposed to happen. ...I love it. Go.");
-    yield* paulWarp(false,'nathan'); return; }
-  if(r==null) return;
-  const ali=r===1;
-  const b=yield choose(ali?[{t:"Ali: The Twins",aff:0},{t:"Ali: Grimmaw",aff:0},{t:"Ali: Nathan the Nasty",aff:0}]:[{t:"Shayan: The Twins",aff:0},{t:"Shayan: Grimmaw",aff:0},{t:"Shayan: Hamza",aff:0}]);
-  if(ali) yield say('paul',"Ali's road. Try not to cut the moon on the way."); else yield say('paul',"Shayan's road. Mind the forge sparks.");
-  yield* paulWarp(ali,['twins','grimmaw',ali?'nathan':'hamza'][b||0]); }
+  for(;;){
+    const r=yield choose([{t:"Shayan's road.",aff:0},{t:"Ali's road.",aff:0},{t:"Something weird.",aff:0},{t:"Never mind.",aff:0}]);
+    if(r==null||r===3){ yield say('paul',"Suit yourself. I'll be around. Probably."); return; }
+    if(r===2){ const w=yield choose([{t:"Shayan: Nathan the Nasty (wrong route)",aff:0},{t:"Back",aff:0}]);
+      if(w!==0) continue;
+      yield say('paul',"Shayan versus Nathan? That fight was never supposed to happen. ...I love it. Go.");
+      yield* paulWarp(false,'nathan'); return; }
+    const ali=r===1;
+    const b=yield choose(ali?[{t:"Ali: The Twins",aff:0},{t:"Ali: Grimmaw",aff:0},{t:"Ali: Nathan the Nasty",aff:0},{t:"Back",aff:0}]:[{t:"Shayan: The Twins",aff:0},{t:"Shayan: Grimmaw",aff:0},{t:"Shayan: Hamza",aff:0},{t:"Back",aff:0}]);
+    if(b==null||b===3) continue;
+    if(ali) yield say('paul',"Ali's road. Try not to cut the moon on the way."); else yield say('paul',"Shayan's road. Mind the forge sparks.");
+    yield* paulWarp(ali,['twins','grimmaw',ali?'nathan':'hamza'][b]); return; } }
 function* paulWarp(ali,boss){ const P=Player, fl=Game.flags; Voice.stop();
   // reset any fight that might still be live, then put the right hero in the boots
   nbRemove(); clearGibs(); if(Game.mech) exitMech(); clearTwins(); endClash(); if(Game.boss&&Game.boss.spr) Game.boss.spr.dispose(); Game.boss=null; Game.bossBar=0; if(Game.zw) zwEnd(); JC.lines=[]; Game.arena=null;
@@ -4584,7 +4586,7 @@ function drawCard(){ const c=Game.card; if(!c) return; c.t+=1/60; const life=3.2
   D.globalAlpha=a; const w=Math.min(1,c.t/.6)*420; D.fillStyle='rgba(216,180,106,.9)'; D.fillRect(UW/2-w,UH/2+28,w*2,2); D.shadowColor='rgba(0,0,0,.8)'; D.shadowBlur=20;
   cText([[c.title,`900 64px ${FD}`,'#fff0cc',UH/2+4],[c.sub,`italic 500 28px ${FB}`,'#f0e4d0',UH/2+70]]); D.shadowBlur=0; D.globalAlpha=1; }
 function drawDialog(){ const d=Game.dlg; if(!d) return; const t=performance.now()/1000;
-  const bx=60,by=UH-210,bw=UW-120,bh=184; frame(bx,by,bw,bh);
+  const nO=d.type==='choice'?d.opts.length:0, bx=60, bw=UW-120, bh=Math.max(184,100+nO*36), by=UH-26-bh; frame(bx,by,bw,bh);
   const who=d.type==='choice'?HERO():d.who, narr=d.type==='say'&&!d.who; let tx=bx+36;
   if(!narr){ const pc=portrait(who,d.type==='choice'?'normal':d.ex); D.save(); D.fillStyle='rgba(40,36,70,.9)'; D.fillRect(bx+26,by+16,152,152); D.imageSmoothingEnabled=false; D.drawImage(pc,0,0,56,56,bx+24,by+10,160,160); D.restore();
     D.strokeStyle='rgba(216,180,106,.8)'; D.lineWidth=2; D.strokeRect(bx+26,by+16,152,152); tx=bx+204;
