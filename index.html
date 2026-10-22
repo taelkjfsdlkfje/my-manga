@@ -45,7 +45,7 @@ body.touch #touch{display:block} body.touch #hint{display:none}
 #unstuck:hover{background:rgba(40,36,70,.85)} #unstuck:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 #unstuck.armed{background:rgba(160,40,50,.9);border-color:#ffb0b8;color:#fff}
 body.touch #unstuck{top:calc(58px + env(safe-area-inset-top,0px));height:36px}
-#tbPause{top:calc(10px + env(safe-area-inset-top,0px));width:40px;height:40px;font:700 14px var(--body);right:calc(10px + env(safe-area-inset-right,0px))}
+#tbPause{top:calc(10px + env(safe-area-inset-top,0px));width:46px;height:40px;border-radius:20px;letter-spacing:.04em;font:800 13px var(--body);right:calc(10px + env(safe-area-inset-right,0px))}
 #tbFull{top:calc(10px + env(safe-area-inset-top,0px));right:calc(58px + env(safe-area-inset-right,0px));height:40px;width:auto;border-radius:20px;padding:0 14px 0 10px;gap:6px;font:700 14px var(--body);border-color:var(--gold)}
 #tbFull svg{width:20px;height:20px}
 body.isfull #tbFull .fsl::after{content:'Exit full screen'} body:not(.isfull) #tbFull .fsl::after{content:'Full screen'}
@@ -82,6 +82,11 @@ html{touch-action:none;-webkit-text-size-adjust:100%;overscroll-behavior:none}
 #volRange{width:160px;accent-color:#d8b46a;height:28px} #volPct{min-width:3ch;text-align:right}
 body.touch #volBtn{top:calc(58px + env(safe-area-inset-top,0px));height:36px;width:40px;border-radius:18px}
 body.touch #volPop{top:calc(102px + env(safe-area-inset-top,0px))}
+#rsPop{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:rgba(4,4,12,.62);padding:16px}
+#rsPop .rsBox{background:rgba(12,13,30,.97);border:2px solid var(--gold);border-radius:14px;padding:22px 26px;max-width:360px;text-align:center;color:var(--parchment);box-shadow:0 0 0 6px rgba(216,180,106,.12)}
+#rsPop b{display:block;font:900 26px var(--display);color:#f6dfa6;margin-bottom:8px} #rsPop p{margin:0 0 18px;font:500 16px var(--body);color:#cfc6b0;line-height:1.4}
+#rsPop .rsRow{display:flex;gap:12px;justify-content:center} #rsPop button{min-width:110px;height:46px;border-radius:23px;font:800 17px var(--body);cursor:pointer;border:2px solid var(--gold);background:rgba(40,36,70,.9);color:var(--parchment)}
+#rsPop #rsYes{background:rgba(150,40,50,.9);border-color:#ffb0b8;color:#fff} #rsPop button:focus-visible{outline:2px solid #fff;outline-offset:2px}
 [hidden]{display:none!important}
 </style>
 
@@ -103,9 +108,10 @@ body.touch #volPop{top:calc(102px + env(safe-area-inset-top,0px))}
     <button class="tb" id="tbNext" aria-label="Next">Next<svg viewBox="0 0 24 24"><path d="M8 5l8 7-8 7z" fill="currentColor"/></svg></button>
     <button class="tb" id="tbFull" aria-label="Toggle full screen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span class="fsl"></span></button>
     <div id="fsTip" hidden></div>
-    <button class="tb" id="tbPause" data-k="pause" aria-label="Pause">II</button>
+    <button class="tb" id="tbPause" aria-label="Menu: restart game">ESC</button>
   </div>
 </div>
+<div id="rsPop" hidden role="dialog" aria-modal="true" aria-labelledby="rsTitle"><div class="rsBox"><b id="rsTitle">Restart game?</b><p>This sends you back to the very beginning of the story.</p><div class="rsRow"><button type="button" id="rsYes">Yes</button><button type="button" id="rsNo">No</button></div></div></div>
 <div id="rotate"><b>Turn your phone sideways</b>The Moonsinger's Bell plays in landscape.<button class="tb" id="rotOk" style="position:static;width:auto;height:auto;border-radius:20px;padding:8px 18px;font:700 15px var(--body)">Play anyway</button></div>
 <div id="hint"><b>WASD</b> move · <b>Space</b> jump, again to double jump, hold to glide · <b>Left click</b> attack, hold and release for Getsuga Tenshou, attack projectiles to deflect them · <b>Right click</b> block, tap just before a hit to parry · <b>Shift</b> dash · <b>Q</b> special · <b>E</b> talk · <b>W/S</b> pick reply · <b>Esc</b> pause · <b>M</b> mute</div>
 
@@ -167,7 +173,7 @@ function toggleFull(){ const el=document.documentElement;
     if(p&&p.then) p.then(ok).catch(fallback); else setTimeout(()=>{ if(fsEl()) ok(); else fallback(); },300); }catch(_){ fallback(); } }
 document.addEventListener('fullscreenchange',syncFull); document.addEventListener('webkitfullscreenchange',syncFull);
 // a tap that always registers, even if the key looks stuck "held" from a button that vanished mid-press
-function tapKey(k){ held[k]=false; hit[k]=true; if(k==='confirm'&&window.Game){ Game.pendTap=performance.now(); } }
+function tapKey(k){ held[k]=false; hit[k]=true; if(k==='confirm'&&typeof Game!=='undefined'){ Game.pendTap=performance.now(); } }
 function releaseTouchKeys(){ document.querySelectorAll('#touch .tb.on').forEach(b=>b.classList.remove('on')); for(const k of ['attack','jump','dash','block','special','confirm','up','down']) held[k]=false; Stick.x=Stick.z=0; const sb=document.getElementById('stickBase'); if(sb) sb.hidden=true; }
 function consume(a){ const v=!!hit[a]; hit[a]=false; return v; }
 function released(a){ const v=!!relz[a]; relz[a]=false; return v; }
@@ -4168,7 +4174,7 @@ const NB_CINE={
         yield 1.1; for(let k=0;k<12;k++) nbShot(NB.x,NB.z,k/12*6.283+r*.2,6); yield .5; }
       for(let d=0;d<3;d++){ const a=rnd(0,3.14); for(let k=-3;k<=3;k++){ const ox=Player.x+Math.cos(a+1.57)*k*2.4, oz=Player.z+Math.sin(a+1.57)*k*2.4; nbLaser({x0:ox-Math.cos(a)*14,z0:oz-Math.sin(a)*14,x1:ox+Math.cos(a)*14,z1:oz+Math.sin(a)*14,warn:.9,dur:.35,w:1,dmg:2}); } yield 1.2; } })();
     let w=0; for(;;){ const r=gen.next(); if(r.done) break; yield wait(r.value); }
-    yield wait(1); NB.barShow=1; Game.letterTo=1; cineSet(NB.x-3,1.6,NB.z+6,NB.x,3,NB.z);
+    yield wait(1); Game.state='cut'; nbClear(); NB.barShow=1; Game.letterTo=1; cineSet(NB.x-3,1.6,NB.z+6,NB.x,3,NB.z);
     yield say('nathan',"Not bad. But I haven't even started remembering how to hate you.");
     yield* nbBeginPhase(2); },
   2:function*(){ const P=Player, G={mem:100}; Game.letterTo=1; Sound.stop(); NB.barShow=0;
@@ -4185,12 +4191,12 @@ const NB_CINE={
     yield wait(1.9);
     for(let k=0;k<3;k++){ const cx=P.x, cz=P.z; for(let i=0;i<8;i++){ const a=i/8*3.14+k*.2; nbLaser({x0:cx-Math.cos(a)*12,z0:cz-Math.sin(a)*12,x1:cx+Math.cos(a)*12,z1:cz+Math.sin(a)*12,warn:.9,dur:.35,w:1.1,dmg:3}); } yield wait(1.3); }
     // beam clash
-    Game.letterTo=1; nbBoost(P.x+7,P.z); cineSet(P.x+3.5,2,P.z+8,P.x+3.5,2,P.z); yield say('nathan',"Soulburn... CANNON!",'angry');
+    Game.state='cut'; nbClear(); Game.letterTo=1; nbBoost(P.x+7,P.z); cineSet(P.x+3.5,2,P.z+8,P.x+3.5,2,P.z); yield say('nathan',"Soulburn... CANNON!",'angry');
     yield say('ali',"Getsuga... TENSHOU!",'angry');
     Cam.cine=null; Game.letterTo=.5; startNBClash('beam'); Game.banner={name:'Clash!',sub:'Mash attack to push the Getsuga through',t:0,small:1};
     while(!NBC.res) yield wait(.05);
     // the clash itself: neither gives, until the crescent rolls the laser into the sky
-    const C=NBC; Game.banner=null; Game.letterTo=1; Sound.sfx('drone'); Sound.sfx('beam');
+    const C=NBC; Game.state='cut'; Game.banner=null; Game.letterTo=1; Sound.sfx('drone'); Sound.sfx('beam');
     const wob={on:1}; Game.fxUpd.push(()=>{ if(!wob.on||!NBC) return false; if(!C.push) C.meter=.6+Math.sin(C.t*9)*.035+Math.sin(C.t*23)*.015; if(Math.random()<.3) shake(.22); return true; });
     const mid=()=>{ const f=nbFace(); return {x:(P.x+f.x)/2,y:(P.y+1.3+f.y)/2,z:(P.z+f.z)/2}; };
     let m=mid(); cineSet(m.x,m.y+.5,m.z+6.5,m.x,m.y,m.z); yield wait(1.3);
@@ -4294,7 +4300,7 @@ const NB_CINE={
     yield say('ali',"...Finally. A worthy edge.");
     Cam.cine=null; Game.letterTo=.4; startNBClash('drill'); Game.banner={name:'Judgement vs Drill',sub:'Mash attack. Cut it before it lands.',t:0,small:1};
     const hold={on:1}; Game.fxUpd.push(()=>{ if(!hold.on) return false; if(NBC){ d.y=P.y+3.5+clamp(NBC.meter,0,1)*9; d.spin=60+(NBC.pulse?40:0); } return true; });
-    while(!NBC.res) yield wait(.05); hold.on=0; endNBClash();
+    while(!NBC.res) yield wait(.05); hold.on=0; endNBClash(); Game.state='cut';
     JC.flash=1; impactFrame([[3,3],[1,2],[2,2],[3,2],[1,1],[2,3]]); Sound.sfx('crossboom'); Sound.sfx('tear'); shake(1.6); d.dead=1;
     for(let i=0;i<160;i++) FX.spawn(P.x,P.y+12,P.z,rnd(-14,14),rnd(-6,14),rnd(-8,8),rnd(.8,1.6),i%2?0x3ff4ff:0xff2a3a,rnd(.3,.7),6,true);
     yield wait(1); Game.letterTo=1; cineSet(P.x+1.4,1.3,P.z+3.6,P.x,1.6,P.z); JC.lines=[];
@@ -4654,7 +4660,7 @@ function loop(now){ let dt=Math.min(1/30,(now-last)/1000); last=now;
   else if(st==='dead'){ Game.deadT+=dt; if(Game.deadT>1.2&&(consume('confirm')||consume('attack'))) respawn(); }
   else if(st==='end'){ Game.endT=Game.endT||0; if(Game.endT>3&&(consume('confirm')||consume('attack'))) toTitle(); }
   else { if(consume('pause')&&!Game.dlg){ Game.prev=st; Game.state='paused'; }
-    if(st==='play'&&!Game.clash&&consume('confirm')){ const n=nearestTalk(); if(n){ if(n.who==='mira') run(SCR.meetMira); else run(SCR[{elder:'elderAgain',baker:'baker',kid:'kid'}[n.who]||n.who]); } } }
+    if(st==='play'&&!Game.clash&&!Game.dlg&&!Game.script&&consume('confirm')){ const n=nearestTalk(); if(n){ if(n.who==='mira') run(SCR.meetMira); else run(SCR[{elder:'elderAgain',baker:'baker',kid:'kid'}[n.who]||n.who]); } } }
   Game.fade=lerp(Game.fade,Game.fadeTo,Math.min(1,dt*3)); if(Math.abs(Game.fade-Game.fadeTo)<.01) Game.fade=Game.fadeTo;
   Game.letter=lerp(Game.letter,Game.letterTo,Math.min(1,dt*4));
   const sdt=dt*Game.timeScale*(Game.slowT>0?.3:1); Game.slowT-=dt;
@@ -4692,6 +4698,17 @@ addEventListener('resize',fit); fit();
   r.addEventListener('change',()=>{ Sound.sfx('blip'); });
   document.addEventListener('pointerdown',e=>{ if(!pop.hidden&&!pop.contains(e.target)&&e.target!==b&&!b.contains(e.target)){ pop.hidden=true; b.setAttribute('aria-expanded','false'); } },true);
   syncVolUI(); })();
+(function(){ const b=document.getElementById('tbPause'), pop=document.getElementById('rsPop'), yes=document.getElementById('rsYes'), no=document.getElementById('rsNo'); if(!b||!pop) return; let prev=null;
+  const stop=e=>e.stopPropagation(); [b,pop].forEach(el=>{ el.addEventListener('pointerdown',stop); el.addEventListener('touchstart',stop,{passive:true}); });
+  const close=()=>{ pop.hidden=true; if(prev!=null&&Game.state==='paused'){ Game.state=prev; } prev=null; releaseTouchKeys(); clearHits(); };
+  b.addEventListener('click',e=>{ e.stopPropagation(); Sound.unlock(); if(Game.state==='title') return; if(!pop.hidden){ close(); return; } releaseTouchKeys(); prev=Game.state==='paused'?(Game.prev||'play'):Game.state; Game.prev=prev; Game.state='paused'; pop.hidden=false; Sound.sfx('select'); setTimeout(()=>no.focus(),0); });
+  no.addEventListener('click',e=>{ e.stopPropagation(); Sound.sfx('blip'); close(); });
+  yes.addEventListener('click',e=>{ e.stopPropagation(); pop.hidden=true; prev=null; Sound.sfx('select'); restartWholeGame(); }); })();
+function restartWholeGame(){ Voice.stop(); Sound.stop(); releaseTouchKeys(); for(const k in held) held[k]=false; clearHits(); if(Game.zw) zwEnd();
+  Object.assign(Game,{script:null,wait:null,dlg:null,evaCard:null,caption:null,chant:null,impSeq:null,card:null,banner:null,subtitle:null,split:null,timeScale:1,slowT:0});
+  Game.fxUpd=[]; scene.children.filter(o=>o.userData&&o.userData.temp).forEach(o=>scene.remove(o)); OV.sh=[]; OV.card=null; OV.cr=null; OV.fist=null; OV.white=0; JC.lines=[];
+  Object.assign(Player,{cineFly:false,cineAnim:null,hidden:false,scripted:null,atk:null,charge:0,beamPose:0,dash:0,hurt:0,vx:0,vy:0,vz:0,inv:0});
+  toTitle(); Game.state='cut'; newGame(); }
 Game.gibs=[]; CROSS=crossTex(); (function(){ const b=document.getElementById('unstuck'); let armT=0;
   const disarm=()=>{ b.classList.remove('armed'); b.textContent='Unstuck'; armT=0; };
   b.addEventListener('pointerdown',e=>e.stopPropagation());
