@@ -13,6 +13,8 @@ CACHE = os.path.join(HERE, 'voice_cache')
 MODEL = os.environ.get('KOKORO_MODEL', os.path.join(HERE, 'tts', 'kokoro-v1.0.onnx'))
 VOICESBIN = os.environ.get('KOKORO_VOICES', os.path.join(HERE, 'tts', 'voices-v1.0.bin'))
 SR = 24000
+# lines re-rendered even if already embedded (cache suffix marks the new take)
+FORCE = {('shayan', 'Above me no sky remains, below me no ground holds, before me, no God stands, heavenly drill of eternal annihilation!'): '_x2'}
 CAST = {  # id: (voice, speed, pitch, extra filter)
   'shayan': ('am_michael', 1.0, 1.0, None), 'mira': ('af_heart', 1.02, 1.0, None), 'miraold': ('af_heart', .96, .94, None),
   'ali': ('am_onyx', .98, .94, 'aecho=0.8:0.3:30:0.12'), 'aliold': ('am_onyx', .9, .86, None), 'hamza': ('am_puck', 1.0, 1.32, None),
@@ -113,7 +115,7 @@ _K = None
 def render(job):
     global _K
     who, text, key = job
-    path = os.path.join(CACHE, key + '.mp3')
+    path = os.path.join(CACHE, key + FORCE.get((who, text), '') + '.mp3')
     if os.path.exists(path): return key
     if _K is None:
         from kokoro_onnx import Kokoro
@@ -128,6 +130,7 @@ def render(job):
         flt = []
         if pitch != 1: flt.append(f'asetrate={SR}*{pitch},aresample={SR},atempo={1 / pitch:.5f}')
         if extra: flt.append(extra)
+        if (who, text) in FORCE: flt.append('atempo=2.0')
         flt += ['silenceremove=start_periods=1:start_threshold=-50dB', 'loudnorm=I=-17:TP=-2']
         subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', wav, '-af', ','.join(flt), '-ac', '1', '-ar', '24000', '-c:a', 'libmp3lame', '-b:a', '40k', path + '.tmp.mp3'], check=True)
         os.replace(path + '.tmp.mp3', path)
@@ -142,7 +145,7 @@ def main():
     code = src[:vm.start()] + src[vm.end():] if vm else src
     lines = scan(code)
     want = {vhash(w + '|' + t): (w, t) for (w, t) in lines}
-    missing = [(w, t, k) for k, (w, t) in want.items() if k not in existing]
+    missing = [(w, t, k) for k, (w, t) in want.items() if k not in existing or (w, t) in FORCE and existing.get(k + '#') is None]
     print(f'{len(lines)} voiced lines found, {len(existing)} already embedded, {len(missing)} to render')
     if dry:
         for w, t, k in sorted(missing): print(f'{w:10s} {k:8s} {t}')
@@ -155,8 +158,9 @@ def main():
             if done % 25 == 0: print(f'  rendered {done}/{len(missing)}', flush=True)
     merged = dict(existing)
     for w, t, k in missing:
-        p = os.path.join(CACHE, k + '.mp3')
+        p = os.path.join(CACHE, k + FORCE.get((w, t), '') + '.mp3')
         if os.path.exists(p): merged[k] = base64.b64encode(open(p, 'rb').read()).decode()
+        if (w, t) in FORCE: merged[k + '#'] = 1
     line = 'const VOICES=' + json.dumps(merged, separators=(',', ':')) + ';'
     src = src[:vm.start()] + line + src[vm.end():] if vm else src
     open(html, 'w', encoding='utf8').write(src)
