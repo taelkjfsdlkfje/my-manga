@@ -1,0 +1,50 @@
+{
+  "character": {
+    "id": "5fd803ed-179a-478e-840d-5314a635fd52",
+    "name": "hurt",
+    "prompt": "add a sword with a cat keychain attached to it to the character reference, he wears the sword on his back like link. The sword is shaped like a knight sword",
+    "size": {
+      "width": 64,
+      "height": 64
+    },
+    "directions": 8,
+    "view": "low top-down"
+  },
+  "spritesheet": {
+    "path": "add_a_sword_with_a-hurt-64.png",
+    "cell_size": {
+      "width": 64,
+      "height": 64
+    },
+    "sheet_size": {
+      "width": 512,
+      "height": 64
+    },
+    "columns": 8,
+    "pivot": "cell-center",
+    "rows": [
+      {
+        "row": 0,
+        "type": "rotations",
+        "frame_count": 8,
+        "directions": [
+          "south",
+          "south-east",
+          "east",
+          "north-east",
+          "north",
+          "north-west",
+          "west",
+          "south-west"
+        ]
+      }
+    ]
+  },
+  "export_version": "1.0",
+  "export_date": "2026-10-23T09:42:29.878971+00:00",
+  "baked": {
+    "from": "add_a_sword_with_a-hurt.png",
+    "shrink": "majority-vote 4x",
+    "max_colours": 48
+  }
+}

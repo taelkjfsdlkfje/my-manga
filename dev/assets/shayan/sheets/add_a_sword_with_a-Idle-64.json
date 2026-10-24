@@ -1,0 +1,434 @@
+{
+  "character": {
+    "id": "a41ef512-30ae-46c1-8a5c-64e43d5d902f",
+    "name": "Idle",
+    "prompt": "add a sword with a cat keychain attached to it to the character reference, he wears the sword on his back like link. The sword is shaped like a knight sword",
+    "size": {
+      "width": 64,
+      "height": 64
+    },
+    "directions": 8,
+    "view": "low top-down"
+  },
+  "spritesheet": {
+    "path": "add_a_sword_with_a-Idle-64.png",
+    "cell_size": {
+      "width": 64,
+      "height": 64
+    },
+    "sheet_size": {
+      "width": 576,
+      "height": 3136
+    },
+    "columns": 9,
+    "pivot": "cell-center",
+    "rows": [
+      {
+        "row": 0,
+        "type": "rotations",
+        "frame_count": 8,
+        "directions": [
+          "south",
+          "south-east",
+          "east",
+          "north-east",
+          "north",
+          "north-west",
+          "west",
+          "south-west"
+        ]
+      },
+      {
+        "row": 1,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "basic2",
+        "animation_group_id": "47c06680-922f-4910-9f63-26b6acf7a41a",
+        "direction": "south"
+      },
+      {
+        "row": 2,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "basic2",
+        "animation_group_id": "47c06680-922f-4910-9f63-26b6acf7a41a",
+        "direction": "south-east"
+      },
+      {
+        "row": 3,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "basic2",
+        "animation_group_id": "47c06680-922f-4910-9f63-26b6acf7a41a",
+        "direction": "east"
+      },
+      {
+        "row": 4,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "basic2",
+        "animation_group_id": "47c06680-922f-4910-9f63-26b6acf7a41a",
+        "direction": "north-east"
+      },
+      {
+        "row": 5,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "basic2",
+        "animation_group_id": "47c06680-922f-4910-9f63-26b6acf7a41a",
+        "direction": "north"
+      },
+      {
+        "row": 6,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "basic2",
+        "animation_group_id": "47c06680-922f-4910-9f63-26b6acf7a41a",
+        "direction": "north-west"
+      },
+      {
+        "row": 7,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "basic2",
+        "animation_group_id": "47c06680-922f-4910-9f63-26b6acf7a41a",
+        "direction": "west"
+      },
+      {
+        "row": 8,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "basic2",
+        "animation_group_id": "47c06680-922f-4910-9f63-26b6acf7a41a",
+        "direction": "south-west"
+      },
+      {
+        "row": 9,
+        "type": "animation",
+        "frame_count": 9,
+        "animation": "Jump",
+        "animation_group_id": "6283829c-8088-4396-8519-db46d835dbbf",
+        "direction": "south"
+      },
+      {
+        "row": 10,
+        "type": "animation",
+        "frame_count": 9,
+        "animation": "Jump",
+        "animation_group_id": "6283829c-8088-4396-8519-db46d835dbbf",
+        "direction": "south-east"
+      },
+      {
+        "row": 11,
+        "type": "animation",
+        "frame_count": 9,
+        "animation": "Jump",
+        "animation_group_id": "6283829c-8088-4396-8519-db46d835dbbf",
+        "direction": "east"
+      },
+      {
+        "row": 12,
+        "type": "animation",
+        "frame_count": 9,
+        "animation": "Jump",
+        "animation_group_id": "6283829c-8088-4396-8519-db46d835dbbf",
+        "direction": "north-east"
+      },
+      {
+        "row": 13,
+        "type": "animation",
+        "frame_count": 9,
+        "animation": "Jump",
+        "animation_group_id": "6283829c-8088-4396-8519-db46d835dbbf",
+        "direction": "north"
+      },
+      {
+        "row": 14,
+        "type": "animation",
+        "frame_count": 9,
+        "animation": "Jump",
+        "animation_group_id": "6283829c-8088-4396-8519-db46d835dbbf",
+        "direction": "north-west"
+      },
+      {
+        "row": 15,
+        "type": "animation",
+        "frame_count": 9,
+        "animation": "Jump",
+        "animation_group_id": "6283829c-8088-4396-8519-db46d835dbbf",
+        "direction": "west"
+      },
+      {
+        "row": 16,
+        "type": "animation",
+        "frame_count": 9,
+        "animation": "Jump",
+        "animation_group_id": "6283829c-8088-4396-8519-db46d835dbbf",
+        "direction": "south-west"
+      },
+      {
+        "row": 17,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Basic1",
+        "animation_group_id": "9235a604-0dc5-4bd6-9c41-98fba4889de5",
+        "direction": "south"
+      },
+      {
+        "row": 18,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Basic1",
+        "animation_group_id": "9235a604-0dc5-4bd6-9c41-98fba4889de5",
+        "direction": "south-east"
+      },
+      {
+        "row": 19,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Basic1",
+        "animation_group_id": "9235a604-0dc5-4bd6-9c41-98fba4889de5",
+        "direction": "east"
+      },
+      {
+        "row": 20,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Basic1",
+        "animation_group_id": "9235a604-0dc5-4bd6-9c41-98fba4889de5",
+        "direction": "north-east"
+      },
+      {
+        "row": 21,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Basic1",
+        "animation_group_id": "9235a604-0dc5-4bd6-9c41-98fba4889de5",
+        "direction": "north"
+      },
+      {
+        "row": 22,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Basic1",
+        "animation_group_id": "9235a604-0dc5-4bd6-9c41-98fba4889de5",
+        "direction": "north-west"
+      },
+      {
+        "row": 23,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Basic1",
+        "animation_group_id": "9235a604-0dc5-4bd6-9c41-98fba4889de5",
+        "direction": "west"
+      },
+      {
+        "row": 24,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Basic1",
+        "animation_group_id": "9235a604-0dc5-4bd6-9c41-98fba4889de5",
+        "direction": "south-west"
+      },
+      {
+        "row": 25,
+        "type": "animation",
+        "frame_count": 7,
+        "animation": "Basic3",
+        "animation_group_id": "a939655e-1cb5-44e9-9db5-9a0a4b0f426c",
+        "direction": "south"
+      },
+      {
+        "row": 26,
+        "type": "animation",
+        "frame_count": 7,
+        "animation": "Basic3",
+        "animation_group_id": "a939655e-1cb5-44e9-9db5-9a0a4b0f426c",
+        "direction": "south-east"
+      },
+      {
+        "row": 27,
+        "type": "animation",
+        "frame_count": 7,
+        "animation": "Basic3",
+        "animation_group_id": "a939655e-1cb5-44e9-9db5-9a0a4b0f426c",
+        "direction": "east"
+      },
+      {
+        "row": 28,
+        "type": "animation",
+        "frame_count": 7,
+        "animation": "Basic3",
+        "animation_group_id": "a939655e-1cb5-44e9-9db5-9a0a4b0f426c",
+        "direction": "north-east"
+      },
+      {
+        "row": 29,
+        "type": "animation",
+        "frame_count": 7,
+        "animation": "Basic3",
+        "animation_group_id": "a939655e-1cb5-44e9-9db5-9a0a4b0f426c",
+        "direction": "north"
+      },
+      {
+        "row": 30,
+        "type": "animation",
+        "frame_count": 7,
+        "animation": "Basic3",
+        "animation_group_id": "a939655e-1cb5-44e9-9db5-9a0a4b0f426c",
+        "direction": "north-west"
+      },
+      {
+        "row": 31,
+        "type": "animation",
+        "frame_count": 7,
+        "animation": "Basic3",
+        "animation_group_id": "a939655e-1cb5-44e9-9db5-9a0a4b0f426c",
+        "direction": "west"
+      },
+      {
+        "row": 32,
+        "type": "animation",
+        "frame_count": 7,
+        "animation": "Basic3",
+        "animation_group_id": "a939655e-1cb5-44e9-9db5-9a0a4b0f426c",
+        "direction": "south-west"
+      },
+      {
+        "row": 33,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "bd88cf29-0a89-454f-abad-6df9dc16c14a",
+        "direction": "south"
+      },
+      {
+        "row": 34,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "bd88cf29-0a89-454f-abad-6df9dc16c14a",
+        "direction": "south-east"
+      },
+      {
+        "row": 35,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "bd88cf29-0a89-454f-abad-6df9dc16c14a",
+        "direction": "east"
+      },
+      {
+        "row": 36,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "bd88cf29-0a89-454f-abad-6df9dc16c14a",
+        "direction": "north-east"
+      },
+      {
+        "row": 37,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "bd88cf29-0a89-454f-abad-6df9dc16c14a",
+        "direction": "north"
+      },
+      {
+        "row": 38,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "bd88cf29-0a89-454f-abad-6df9dc16c14a",
+        "direction": "north-west"
+      },
+      {
+        "row": 39,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "bd88cf29-0a89-454f-abad-6df9dc16c14a",
+        "direction": "west"
+      },
+      {
+        "row": 40,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Walk",
+        "animation_group_id": "bd88cf29-0a89-454f-abad-6df9dc16c14a",
+        "direction": "south-west"
+      },
+      {
+        "row": 41,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "Run",
+        "animation_group_id": "f02e5ba4-5e89-4f09-90c8-ee0372cf587c",
+        "direction": "south"
+      },
+      {
+        "row": 42,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "Run",
+        "animation_group_id": "f02e5ba4-5e89-4f09-90c8-ee0372cf587c",
+        "direction": "south-east"
+      },
+      {
+        "row": 43,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "Run",
+        "animation_group_id": "f02e5ba4-5e89-4f09-90c8-ee0372cf587c",
+        "direction": "east"
+      },
+      {
+        "row": 44,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "Run",
+        "animation_group_id": "f02e5ba4-5e89-4f09-90c8-ee0372cf587c",
+        "direction": "north-east"
+      },
+      {
+        "row": 45,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "Run",
+        "animation_group_id": "f02e5ba4-5e89-4f09-90c8-ee0372cf587c",
+        "direction": "north"
+      },
+      {
+        "row": 46,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "Run",
+        "animation_group_id": "f02e5ba4-5e89-4f09-90c8-ee0372cf587c",
+        "direction": "north-west"
+      },
+      {
+        "row": 47,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "Run",
+        "animation_group_id": "f02e5ba4-5e89-4f09-90c8-ee0372cf587c",
+        "direction": "west"
+      },
+      {
+        "row": 48,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "Run",
+        "animation_group_id": "f02e5ba4-5e89-4f09-90c8-ee0372cf587c",
+        "direction": "south-west"
+      }
+    ]
+  },
+  "export_version": "1.0",
+  "export_date": "2026-10-23T09:36:42.445115+00:00",
+  "baked": {
+    "from": "add_a_sword_with_a-Idle.png",
+    "shrink": "majority-vote 4x",
+    "max_colours": 48
+  }
+}

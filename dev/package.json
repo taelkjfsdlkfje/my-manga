@@ -1,0 +1,1 @@
+{ "name": "moonsinger-dev", "private": true, "description": "Headless test harness deps", "dependencies": { "three": "0.147.0" } }

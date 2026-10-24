@@ -1,0 +1,50 @@
+{
+  "character": {
+    "id": "c79ff60b-45ff-46a4-a23c-ec295ff7d934",
+    "name": "dead",
+    "prompt": "add a sword with a cat keychain attached to it to the character reference, he wears the sword on his back like link. The sword is shaped like a knight sword",
+    "size": {
+      "width": 64,
+      "height": 64
+    },
+    "directions": 8,
+    "view": "low top-down"
+  },
+  "spritesheet": {
+    "path": "add_a_sword_with_a-dead-64.png",
+    "cell_size": {
+      "width": 64,
+      "height": 64
+    },
+    "sheet_size": {
+      "width": 512,
+      "height": 64
+    },
+    "columns": 8,
+    "pivot": "cell-center",
+    "rows": [
+      {
+        "row": 0,
+        "type": "rotations",
+        "frame_count": 8,
+        "directions": [
+          "south",
+          "south-east",
+          "east",
+          "north-east",
+          "north",
+          "north-west",
+          "west",
+          "south-west"
+        ]
+      }
+    ]
+  },
+  "export_version": "1.0",
+  "export_date": "2026-10-23T09:42:30.497298+00:00",
+  "baked": {
+    "from": "add_a_sword_with_a-dead.png",
+    "shrink": "majority-vote 4x",
+    "max_colours": 48
+  }
+}
