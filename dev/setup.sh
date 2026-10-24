@@ -16,5 +16,5 @@ if [ "$1" = "--voices" ]; then
   echo "voices ready: $(ls -la tts | tail -n +2 | wc -l) files in dev/tts"
 fi
 # make sure the original game commit is available for build.py (shallow clones may lack it)
-git -C .. cat-file -e 6c09a24 2>/dev/null || git -C .. fetch -q --depth=1 origin 6c09a24 || true
+git -C .. cat-file -e 6c09a248470d7b1071605affab1f55be9079aa80 2>/dev/null || git -C .. fetch -q --depth=1 origin 6c09a248470d7b1071605affab1f55be9079aa80 || true
 python3 build.py >/dev/null && node --check ext.js && echo "build OK"

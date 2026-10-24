@@ -4,7 +4,7 @@ Also writes game.js (patched main script, voices stripped) + ext.js for the Node
 import subprocess, os, sys, glob
 S = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(S)
-BASE = '6c09a24'  # the original game, before any extension; every patch below applies to it
+BASE = '6c09a248470d7b1071605affab1f55be9079aa80'  # the original game, before any extension; every patch below applies to it
 def base_html():
     try: return subprocess.check_output(['git', '-C', REPO, 'show', BASE + ':index.html'], stderr=subprocess.DEVNULL).decode('utf8')
     except subprocess.CalledProcessError:
