@@ -36,6 +36,9 @@ Routes: `ROUTE=shayan|ali` with `CH=0` (Omar lives), `1` (Caotan lives) or `2` (
 
 ## Rules that save time and avoid bugs
 
+- `.claude/settings.json` runs `dev/setup.sh` automatically at session start. It also blocks reading `index.html`, `dev/ext.js` and `dev/ext/02_shsprite.js`, which is mostly base64 image data; edit `dev/assets/shayan/sh_sprite_tpl.js` instead.
+- When searching, exclude the huge files: `grep -rn PATTERN dev/ext dev/game.js --exclude=02_shsprite.js`. Never grep `index.html`: its VOICES line is 25 MB.
+
 - **Never edit `index.html`.** Change `dev/ext/*.js`. Change base-game code only through `patch(s, old, new)` in `build.py` (the anchor must match exactly once).
 - **Extension style:**
   - Wrap base functions by reassigning the global: `(function(){ const f=foo; foo=function(){ …; return f.apply(this,arguments); }; })();`.

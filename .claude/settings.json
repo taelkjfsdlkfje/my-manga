@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./index.html)",
+      "Read(./dev/ext.js)",
+      "Read(./dev/ext/02_shsprite.js)",
+      "Read(./dev/assets/shayan/sh_atlas.png)",
+      "Read(./dev/node_modules/**)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "cd \"$CLAUDE_PROJECT_DIR/dev\" && bash setup.sh >/tmp/moonsinger-setup.log 2>&1 && echo 'dev setup done (harness + build OK)' || echo 'dev setup failed: see /tmp/moonsinger-setup.log'", "timeout": 300 }
+        ]
+      }
+    ]
+  }
+}
